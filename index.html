@@ -388,6 +388,91 @@
   .panel-notes:focus { border-color: #8b5cf6; }
   .panel-saved-note { font-size: 11px; color: #444; margin-top: 5px; height: 14px; }
 
+  /* Report Archive page */
+  .archive-head {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 16px; flex-wrap: wrap;
+  }
+  .archive-compose {
+    background: #111; border: 1px solid #1f1f1f; border-radius: 12px;
+    padding: 16px 18px; margin-bottom: 20px;
+  }
+  .archive-compose.hidden { display: none; }
+  .ac-row { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .archive-compose select, .archive-compose input, .archive-compose textarea {
+    background: #161616; border: 1px solid #2a2a2a; color: #e5e5e5;
+    padding: 8px 12px; border-radius: 8px; font-size: 13px;
+    font-family: inherit; outline: none;
+  }
+  .archive-compose select:focus, .archive-compose input:focus, .archive-compose textarea:focus { border-color: #8b5cf6; }
+  .archive-compose input.ac-title { flex: 1; min-width: 200px; }
+  .archive-compose textarea.ac-body {
+    width: 100%; min-height: 240px; resize: vertical; line-height: 1.55;
+  }
+  .ac-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .ac-save {
+    background: #8b5cf6; border: none; color: #fff;
+    padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: background .15s;
+  }
+  .ac-save:hover { background: #7c3aed; }
+  .ac-save:disabled { opacity: .5; cursor: not-allowed; }
+  .ac-cancel {
+    background: none; border: 1px solid #2a2a2a; color: #888;
+    padding: 8px 16px; border-radius: 8px; font-size: 13px; cursor: pointer;
+  }
+  .ac-cancel:hover { border-color: #555; color: #e5e5e5; }
+  .report-card {
+    background: #111; border: 1px solid #1f1f1f; border-radius: 12px;
+    margin-bottom: 10px; overflow: hidden; transition: border-color .15s;
+  }
+  .report-card:hover { border-color: #333; }
+  .report-card.open { border-color: #2f2a45; }
+  .rc-head {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 16px; cursor: pointer; user-select: none;
+  }
+  .rc-type {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+    padding: 2px 9px; border-radius: 999px; flex-shrink: 0;
+  }
+  .rc-type.daily  { background: rgba(139,92,246,.15); color: #c4b5fd; border: 1px solid rgba(139,92,246,.3); }
+  .rc-type.weekly { background: rgba(16,185,129,.12); color: #6ee7b7; border: 1px solid rgba(16,185,129,.3); }
+  .rc-title { font-size: 14px; font-weight: 500; color: #e5e5e5; flex: 1; min-width: 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rc-date { font-size: 12px; color: #666; flex-shrink: 0; white-space: nowrap; }
+  .rc-del {
+    background: none; border: 1px solid #2a2a2a; color: #555;
+    width: 26px; height: 26px; border-radius: 6px; cursor: pointer;
+    font-size: 14px; line-height: 1; flex-shrink: 0; transition: all .15s;
+  }
+  .rc-del:hover { border-color: #ef4444; color: #ef4444; }
+  .rc-body {
+    display: none; padding: 4px 22px 20px; border-top: 1px solid #1a1a1a;
+    font-size: 14px; line-height: 1.65; color: #ccc;
+  }
+  .report-card.open .rc-body { display: block; }
+  .rc-body h1, .rc-body h2, .rc-body h3 { color: #e5e5e5; margin: 18px 0 8px; line-height: 1.3; }
+  .rc-body h1 { font-size: 20px; } .rc-body h2 { font-size: 17px; } .rc-body h3 { font-size: 15px; }
+  .rc-body p { margin: 8px 0; }
+  .rc-body ul, .rc-body ol { margin: 8px 0; padding-left: 22px; }
+  .rc-body li { margin: 3px 0; }
+  .rc-body code {
+    background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 4px;
+    padding: 1px 5px; font-size: 12px; font-family: ui-monospace, monospace;
+  }
+  .rc-body pre {
+    background: #0d0d0d; border: 1px solid #1f1f1f; border-radius: 8px;
+    padding: 12px 14px; overflow-x: auto; margin: 10px 0;
+  }
+  .rc-body pre code { background: none; border: none; padding: 0; }
+  .rc-body strong { color: #e5e5e5; }
+  .rc-body hr { border: none; border-top: 1px solid #1f1f1f; margin: 16px 0; }
+  .rc-body blockquote {
+    border-left: 3px solid #2f2a45; margin: 10px 0; padding: 2px 14px; color: #999;
+  }
+  .rc-actions { display: flex; gap: 8px; margin-top: 16px; padding-top: 12px; border-top: 1px solid #1a1a1a; }
+
   /* Signals panel */
   .signals-panel {
     background: #111; border: 1px solid #1f1f1f;
@@ -613,6 +698,7 @@
     <div class="nav-item active" data-page="outliers"><span class="nav-icon">🔥</span> Outliers</div>
     <div class="nav-item" data-page="recent"><span class="nav-icon">📅</span> Recent</div>
     <div class="nav-item" data-page="saved"><span class="nav-icon">📚</span> Report Library</div>
+    <div class="nav-item" data-page="archive"><span class="nav-icon">🗂️</span> Report Archive</div>
     <div class="nav-item" data-page="insights"><span class="nav-icon">🤖</span> AI Insights</div>
   </div>
 
@@ -709,6 +795,10 @@
     <div id="savedGrid"></div>
   </section>
 
+  <section class="page" id="page-archive">
+    <div id="archiveContent"><div class="loading">Loading reports...</div></div>
+  </section>
+
   <section class="page" id="page-topics">
     <div id="topicsContent"><div class="loading">Loading topics...</div></div>
   </section>
@@ -729,6 +819,7 @@
 
 <script type="module">
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { marked } from "https://esm.sh/marked@12";
 
 const SUPABASE_URL = "https://dykfwypquadnuvrncfxl.supabase.co";
 const SUPABASE_KEY = "sb_publishable_QJmFAZRmSTPBliN4v0jDog_PySCWl6_";
@@ -766,6 +857,7 @@ const PAGES = {
   outliers: { title: "Outliers",     showFilters: true,  defaultSort: "outlier_score" },
   recent:   { title: "Recent",      showFilters: true,  defaultSort: "published_at" },
   saved:    { title: "Report Library", showFilters: false },
+  archive:  { title: "Report Archive", showFilters: false },
   insights: { title: "AI Insights", showFilters: false },
   topics:   { title: "Topics",      showFilters: false },
   velocity: { title: "Velocity",    showFilters: false },
@@ -1651,7 +1743,7 @@ ${"═".repeat(60)}
 ${accelSection}
 
 ${"═".repeat(60)}
-SMALL-CHANNEL BREAKOUTS (<100K subs, outlier ≥ 4x, last 7d — opportunity windows)
+SMALL-CHANNEL BREAKOUTS (<300K subs, outlier ≥ 4x, last 7d — opportunity windows)
 ${"═".repeat(60)}
 ${smallSection}
 
@@ -1828,8 +1920,8 @@ async function loadRadar() {
     .order("outlier_score", { ascending: false })
     .limit(30);
 
-  // --- small-channel breakouts (<100K subs, outlier ≥ 4x, last 7d) ---
-  // Opportunity windows: small channels punching above their tier inside live themes.
+  // --- small-channel breakouts (<300K subs, outlier ≥ 4x, last 7d) ---
+  // Opportunity windows: small/mid channels punching above their tier inside live themes.
   const { data: breakoutPool } = await supabase
     .from("videos")
     .select("*, channels(title, subscriber_count)")
@@ -1839,7 +1931,7 @@ async function loadRadar() {
     .order("outlier_score", { ascending: false })
     .limit(40);
   const smallBreakouts = (breakoutPool || [])
-    .filter(v => { const s = v.channels?.subscriber_count || 0; return s > 0 && s < 100000; })
+    .filter(v => { const s = v.channels?.subscriber_count || 0; return s > 0 && s < 300000; })
     .slice(0, 12)
     .map(v => ({ ...v, velocity_24h: velMap.get(v.video_id) ?? null }));
 
@@ -2120,6 +2212,142 @@ async function loadInsights() {
   }
 }
 
+/* ---------- Report Archive ---------- */
+// Manual paste-back: generate report in external LLM → paste markdown here → it lives in the system.
+let archiveCompiled = [];   // cached report rows
+let composeOpen = false;
+
+function reportDateLabel(d) {
+  return new Date(d + "T00:00:00Z")
+    .toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+}
+
+async function loadReports() {
+  const content = $("archiveContent");
+  content.innerHTML = '<div class="loading">Loading reports...</div>';
+
+  const { data, error } = await supabase
+    .from("reports")
+    .select("id, report_type, report_date, title, body, created_at")
+    .order("report_date", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    content.innerHTML = `<div class="empty">Error: ${escapeHtml(error.message)}</div>`;
+    return;
+  }
+  archiveCompiled = data || [];
+  renderArchive();
+}
+
+function renderArchive() {
+  const content = $("archiveContent");
+  const today = new Date().toLocaleDateString("en-CA"); // yyyy-mm-dd, local
+
+  const cards = archiveCompiled.length
+    ? archiveCompiled.map(r => {
+        const title = r.title?.trim() || `${r.report_type === "weekly" ? "Weekly Report" : "Daily Radar"} · ${reportDateLabel(r.report_date)}`;
+        return `
+        <div class="report-card" data-id="${r.id}">
+          <div class="rc-head" data-toggle="${r.id}">
+            <span class="rc-type ${r.report_type}">${r.report_type}</span>
+            <span class="rc-title">${escapeHtml(title)}</span>
+            <span class="rc-date">${reportDateLabel(r.report_date)}</span>
+            <button class="rc-del" data-del="${r.id}" title="Delete report">×</button>
+          </div>
+          <div class="rc-body" id="rcBody-${r.id}"></div>
+        </div>`;
+      }).join("")
+    : '<div class="empty">No reports yet. Generate one in your LLM, then paste the markdown here with “＋ New Report”.</div>';
+
+  content.innerHTML = `
+    <div class="archive-head">
+      <div class="stats">🗂️ ${archiveCompiled.length} report${archiveCompiled.length !== 1 ? "s" : ""}</div>
+      <button class="ac-save" id="archiveNewBtn">＋ New Report</button>
+    </div>
+
+    <div class="archive-compose ${composeOpen ? "" : "hidden"}" id="archiveCompose">
+      <div class="ac-row">
+        <select id="acType">
+          <option value="daily">Daily Radar</option>
+          <option value="weekly">Weekly Report</option>
+        </select>
+        <input type="date" id="acDate" value="${today}"/>
+        <input type="text" class="ac-title" id="acTitle" placeholder="Title (optional — auto from type + date)"/>
+      </div>
+      <textarea class="ac-body" id="acBody" placeholder="Paste the generated report markdown here..."></textarea>
+      <div class="ac-actions">
+        <button class="ac-save" id="acSaveBtn">Save report</button>
+        <button class="ac-cancel" id="acCancelBtn">Cancel</button>
+      </div>
+    </div>
+
+    <div id="archiveList">${cards}</div>`;
+
+  wireArchive();
+}
+
+function wireArchive() {
+  $("archiveNewBtn").addEventListener("click", () => {
+    composeOpen = true;
+    $("archiveCompose").classList.remove("hidden");
+    $("acBody").focus();
+  });
+  $("acCancelBtn")?.addEventListener("click", () => {
+    composeOpen = false;
+    $("archiveCompose").classList.add("hidden");
+  });
+  $("acSaveBtn")?.addEventListener("click", async () => {
+    const btn = $("acSaveBtn");
+    const body = $("acBody").value.trim();
+    if (!body) { $("acBody").focus(); return; }
+    btn.disabled = true; btn.textContent = "Saving...";
+    const { error } = await supabase.from("reports").insert({
+      report_type: $("acType").value,
+      report_date: $("acDate").value || new Date().toLocaleDateString("en-CA"),
+      title: $("acTitle").value.trim(),
+      body,
+    });
+    if (error) {
+      btn.disabled = false; btn.textContent = "Save report";
+      alert("Save failed: " + error.message);
+      return;
+    }
+    composeOpen = false;
+    await loadReports();
+  });
+
+  // expand / collapse — render markdown lazily on first open
+  $("archiveList").addEventListener("click", e => {
+    if (e.target.closest(".rc-del")) return;
+    const head = e.target.closest("[data-toggle]");
+    if (!head) return;
+    const card = head.closest(".report-card");
+    const id = head.dataset.toggle;
+    const bodyEl = $(`rcBody-${id}`);
+    const opening = !card.classList.contains("open");
+    card.classList.toggle("open", opening);
+    if (opening && !bodyEl.dataset.rendered) {
+      const r = archiveCompiled.find(x => String(x.id) === String(id));
+      bodyEl.innerHTML = marked.parse(r?.body || "");
+      bodyEl.dataset.rendered = "1";
+    }
+  });
+
+  // delete
+  $("archiveList").addEventListener("click", async e => {
+    const del = e.target.closest(".rc-del");
+    if (!del) return;
+    e.stopPropagation();
+    const id = del.dataset.del;
+    if (!confirm("Delete this report? This cannot be undone.")) return;
+    const { error } = await supabase.from("reports").delete().eq("id", id);
+    if (error) { alert("Delete failed: " + error.message); return; }
+    archiveCompiled = archiveCompiled.filter(r => String(r.id) !== String(id));
+    renderArchive();
+  });
+}
+
 /* ---------- Side Panel ---------- */
 let currentPanelId  = null;
 let notesDebounce   = null;
@@ -2370,6 +2598,9 @@ function switchPage(pageId) {
   } else if (pageId === "saved") {
     $("page-saved").classList.add("active");
     loadReportLibrary();
+  } else if (pageId === "archive") {
+    $("page-archive").classList.add("active");
+    loadReports();
   } else if (pageId === "insights") {
     $("page-insights").classList.add("active");
     loadInsights();
