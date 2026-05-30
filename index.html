@@ -1,0 +1,2425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TubeMetrics — Finance</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #0a0a0a; color: #e5e5e5;
+    min-height: 100vh; display: flex;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: 220px; flex-shrink: 0;
+    background: #0f0f0f;
+    border-right: 1px solid #1f1f1f;
+    padding: 20px 0;
+    height: 100vh; position: sticky; top: 0;
+    overflow-y: auto;
+  }
+  .logo {
+    padding: 0 20px 20px;
+    font-size: 18px; font-weight: 600;
+  }
+  .logo span { color: #8b5cf6; }
+  .nav-section { margin-top: 18px; }
+  .nav-section-title {
+    padding: 0 20px 8px;
+    font-size: 11px; font-weight: 600;
+    color: #555; letter-spacing: .8px;
+    text-transform: uppercase;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 20px; cursor: pointer;
+    color: #aaa; font-size: 14px;
+    border-left: 3px solid transparent;
+    transition: background .15s, color .15s;
+    user-select: none;
+  }
+  .nav-item:hover { background: #161616; color: #e5e5e5; }
+  .nav-item.active {
+    background: #1a1530; color: #8b5cf6;
+    border-left-color: #8b5cf6;
+  }
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+  /* Main */
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .topbar {
+    padding: 16px 28px;
+    border-bottom: 1px solid #1f1f1f;
+    display: flex; align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap; gap: 12px;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 14px; }
+  .topbar h2 { font-size: 18px; font-weight: 600; white-space: nowrap; }
+
+  .filters { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .filter-group {
+    display: flex; align-items: center; gap: 6px;
+  }
+  .filter-label {
+    font-size: 11px; font-weight: 600; color: #444;
+    text-transform: uppercase; letter-spacing: .6px;
+    white-space: nowrap;
+  }
+  .filters select, .filters input {
+    background: #161616; border: 1px solid #2a2a2a;
+    color: #e5e5e5; padding: 8px 12px; border-radius: 8px;
+    font-size: 13px; outline: none;
+  }
+  .filters select:focus, .filters input:focus { border-color: #8b5cf6; }
+  .search-wrap { position: relative; }
+  .search-wrap input { padding-left: 32px; width: 200px; }
+  .search-icon {
+    position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+    color: #666; font-size: 14px; pointer-events: none;
+  }
+  .date-tabs { display: flex; gap: 4px; }
+  .date-tab {
+    background: #161616; border: 1px solid #2a2a2a; color: #888;
+    padding: 7px 14px; border-radius: 8px; font-size: 13px;
+    cursor: pointer; transition: all .15s;
+  }
+  .date-tab.active { background: #8b5cf6; border-color: #8b5cf6; color: white; }
+  .reset-btn {
+    background: none; border: 1px solid #2a2a2a; color: #666;
+    padding: 7px 12px; border-radius: 8px; font-size: 13px;
+    cursor: pointer; transition: all .15s;
+  }
+  .reset-btn:hover { border-color: #666; color: #e5e5e5; }
+
+  .hamburger {
+    display: none; background: none; border: 1px solid #2a2a2a;
+    color: #e5e5e5; font-size: 16px; cursor: pointer;
+    width: 36px; height: 36px; border-radius: 8px;
+  }
+
+  /* Pages */
+  .page { display: none; padding: 20px 28px; }
+  .page.active { display: block; }
+  .stats { color: #888; font-size: 13px; margin-bottom: 16px; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+  }
+
+  /* Card */
+  .card {
+    background: #161616; border: 1px solid #1f1f1f;
+    border-radius: 12px; overflow: hidden; cursor: pointer;
+    transition: transform .15s, border-color .15s;
+    display: flex; flex-direction: column;
+    text-decoration: none; color: inherit;
+    position: relative;
+  }
+  .card:hover { transform: translateY(-2px); border-color: #333; }
+  .thumb { position: relative; aspect-ratio: 16/9; background: #111; }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .score-badge {
+    position: absolute; bottom: 8px; right: 8px;
+    padding: 4px 10px; border-radius: 999px;
+    font-size: 12px; font-weight: 700;
+    background: rgba(139,92,246,.85); color: white;
+  }
+  .score-badge.sig-extreme {
+    background: rgba(239,68,68,.92); color: #fff;
+    box-shadow: 0 0 8px rgba(239,68,68,.4);
+  }
+  .score-badge.sig-strong {
+    background: rgba(249,115,22,.9); color: #fff;
+  }
+  .score-badge.sig-moderate {
+    background: rgba(139,92,246,.85); color: #fff;
+  }
+  .score-badge.sig-low {
+    background: rgba(80,80,80,.75); color: #bbb;
+  }
+  .card:hover .score-badge.sig-extreme { box-shadow: 0 0 14px rgba(239,68,68,.6); }
+  .size-tag {
+    position: absolute; top: 8px; left: 8px;
+    background: rgba(0,0,0,.75); color: #e5e5e5;
+    padding: 3px 9px; border-radius: 999px; font-size: 11px;
+  }
+  .size-tag.small { background: rgba(34,197,94,.85); color: #000; }
+  .size-tag.mid   { background: rgba(234,179,8,.85); color: #000; }
+  .size-tag.large { background: rgba(80,80,80,.8); }
+
+  .save-btn {
+    position: absolute; top: 8px; right: 8px;
+    width: 30px; height: 30px;
+    background: rgba(0,0,0,.7); border: none;
+    border-radius: 50%; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: #e5e5e5; transition: all .15s;
+    z-index: 2; padding: 0;
+  }
+  .save-btn:hover { background: rgba(139,92,246,.9); color: #fff; }
+  .save-btn.saved { background: rgba(139,92,246,.9); color: #fff; }
+  .save-btn svg { width: 14px; height: 14px; }
+
+  .body { padding: 12px 14px; flex: 1; display: flex; flex-direction: column; }
+  .title {
+    font-size: 14px; font-weight: 500; line-height: 1.4; margin-bottom: 6px;
+    display: -webkit-box; -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .channel { font-size: 12px; color: #777; margin-bottom: 10px; }
+  .metrics {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+    font-size: 11px; color: #666; margin-top: auto;
+    padding-top: 8px; border-top: 1px solid #1f1f1f;
+  }
+  .metrics div { display: flex; flex-direction: column; }
+  .metrics span { font-size: 13px; color: #e5e5e5; font-weight: 500; }
+  /* Primary metric — outlier score */
+  .metrics .m-primary { color: #999; }
+  .metrics .m-primary span { font-size: 15px; font-weight: 700; color: #e5e5e5; }
+  /* Secondary — VPH, Views */
+  .metrics .m-secondary span { color: #ccc; font-weight: 500; }
+  /* Dim — EQS */
+  .metrics .m-dim { color: #444; }
+  .metrics .m-dim span { font-size: 12px; color: #555; font-weight: 400; }
+
+  .empty, .loading {
+    text-align: center; color: #555; padding: 80px 20px;
+    grid-column: 1/-1; font-size: 15px;
+  }
+
+  /* Skeleton */
+  .skeleton {
+    background: #161616; border: 1px solid #1f1f1f;
+    border-radius: 12px; overflow: hidden;
+    animation: pulse 1.5s infinite ease-in-out;
+  }
+  .skeleton-thumb { aspect-ratio: 16/9; background: #222; }
+  .skeleton-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+  .skeleton-line { height: 12px; border-radius: 6px; background: #222; }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* Channels table */
+  .table-wrap { background: #161616; border: 1px solid #1f1f1f; border-radius: 12px; overflow: hidden; overflow-x: auto; }
+  .table { width: 100%; border-collapse: collapse; }
+  .table th, .table td {
+    text-align: left; padding: 14px 18px;
+    border-bottom: 1px solid #1f1f1f;
+    font-size: 14px;
+  }
+  .table tr:last-child td { border-bottom: none; }
+  .table th {
+    color: #888; font-weight: 500; font-size: 11px;
+    text-transform: uppercase; letter-spacing: .8px;
+    background: #0f0f0f;
+  }
+  .table tbody tr:hover td { background: #1c1c1c; }
+
+  /* Coming soon */
+  .coming-soon {
+    text-align: center; padding: 120px 20px;
+    color: #666;
+  }
+  .coming-soon-icon { font-size: 48px; margin-bottom: 16px; }
+  .coming-soon h3 { font-size: 22px; margin-bottom: 8px; color: #e5e5e5; font-weight: 600; }
+  .coming-soon p { font-size: 14px; }
+
+  /* Topics / clusters */
+  .topics-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
+  }
+  .week-select {
+    background: #161616; border: 1px solid #2a2a2a; color: #e5e5e5;
+    padding: 8px 12px; border-radius: 8px; font-size: 13px; outline: none;
+  }
+  .week-select:focus { border-color: #8b5cf6; }
+  .cluster-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 14px;
+  }
+  .cluster-card {
+    background: #161616; border: 1px solid #1f1f1f; border-radius: 12px;
+    padding: 18px; cursor: pointer;
+    transition: transform .15s, border-color .15s;
+  }
+  .cluster-card:hover { transform: translateY(-2px); border-color: #8b5cf6; }
+  .cluster-card h3 {
+    font-size: 16px; font-weight: 600; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .cluster-count {
+    background: rgba(139,92,246,.2); color: #8b5cf6;
+    font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px;
+  }
+  .cluster-desc { font-size: 13px; color: #999; line-height: 1.5; margin-bottom: 12px; }
+  .cluster-samples { font-size: 12px; color: #666; display: flex; flex-direction: column; gap: 5px; }
+  .cluster-samples div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .back-btn {
+    background: none; border: 1px solid #2a2a2a; color: #aaa;
+    padding: 7px 14px; border-radius: 8px; font-size: 13px;
+    cursor: pointer; margin-bottom: 16px; transition: all .15s;
+  }
+  .back-btn:hover { border-color: #8b5cf6; color: #e5e5e5; }
+
+  /* Side panel */
+  .side-panel {
+    position: fixed; right: 0; top: 0; bottom: 0;
+    width: 460px; background: #0f0f0f;
+    border-left: 1px solid #222;
+    z-index: 300;
+    transform: translateX(100%);
+    transition: transform .25s cubic-bezier(.4,0,.2,1);
+    overflow-y: auto; overflow-x: hidden;
+    display: flex; flex-direction: column;
+  }
+  .side-panel.open { transform: translateX(0); box-shadow: -8px 0 32px rgba(0,0,0,.5); }
+  .panel-close {
+    position: absolute; top: 12px; right: 14px;
+    background: none; border: 1px solid #2a2a2a; color: #888;
+    width: 28px; height: 28px; border-radius: 6px;
+    cursor: pointer; font-size: 16px; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .15s; z-index: 1;
+  }
+  .panel-close:hover { border-color: #666; color: #e5e5e5; }
+  .panel-section { padding: 14px 18px; border-bottom: 1px solid #1a1a1a; }
+  .panel-section:last-child { border-bottom: none; }
+  .panel-title { font-size: 14px; font-weight: 600; color: #e5e5e5; line-height: 1.4; margin-bottom: 6px; }
+  .panel-meta  { font-size: 12px; color: #666; margin-bottom: 8px; }
+  .panel-yt-link {
+    display: inline-block; font-size: 12px; color: #8b5cf6;
+    text-decoration: none; border: 1px solid rgba(139,92,246,.3);
+    padding: 4px 10px; border-radius: 6px; transition: all .15s;
+  }
+  .panel-yt-link:hover { background: rgba(139,92,246,.1); border-color: #8b5cf6; }
+  .panel-metrics-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .panel-metric { display: flex; flex-direction: column; gap: 2px; }
+  .panel-metric.primary { grid-column: span 2; }
+  .pm-label { font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: .5px; }
+  .pm-value { font-size: 22px; font-weight: 700; color: #e5e5e5; line-height: 1.1; }
+  .panel-metric:not(.primary) .pm-value { font-size: 16px; }
+  .pm-sub   { font-size: 11px; color: #666; margin-top: 2px; }
+  .panel-section-title {
+    font-size: 11px; font-weight: 600; color: #555;
+    text-transform: uppercase; letter-spacing: .6px; margin-bottom: 10px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .copy-evidence-btn {
+    font-size: 11px; font-weight: 500; color: #8b5cf6;
+    background: none; border: 1px solid rgba(139,92,246,.3);
+    border-radius: 5px; padding: 2px 8px; cursor: pointer;
+    letter-spacing: 0; text-transform: none;
+    transition: all .15s; white-space: nowrap;
+  }
+  .copy-evidence-btn:hover { background: rgba(139,92,246,.1); border-color: #8b5cf6; }
+  .copy-evidence-btn.copied { color: #22c55e; border-color: rgba(34,197,94,.3); }
+  .panel-bullets { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+  .panel-bullets li { font-size: 13px; color: #ccc; line-height: 1.5; }
+  .panel-status-row { display: flex; flex-direction: column; gap: 6px; }
+  .panel-status-sublabel { font-size: 10px; font-weight: 600; color: #444; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 6px; }
+  .status-btn {
+    background: #161616; border: 1px solid #2a2a2a; color: #888;
+    padding: 8px 12px; border-radius: 8px; font-size: 13px;
+    cursor: pointer; text-align: left; transition: all .15s;
+  }
+  .status-btn:hover { border-color: #555; color: #e5e5e5; }
+  .status-btn.active.s-watch_later   { border-color: #888;    background: rgba(136,136,136,.1); color: #ccc; }
+  .status-btn.active.s-candidate     { border-color: #8b5cf6; background: rgba(139,92,246,.12); color: #c4b5fd; }
+  .status-btn.active.s-evidence      { border-color: #3b82f6; background: rgba(59,130,246,.12); color: #93c5fd; }
+  .status-btn.active.s-title_pattern { border-color: #f59e0b; background: rgba(245,158,11,.12); color: #fcd34d; }
+  .status-btn.active.s-small_breakout{ border-color: #22c55e; background: rgba(34,197,94,.1);  color: #86efac; }
+  .status-btn.active.s-used_in_report{ border-color: #10b981; background: rgba(16,185,129,.1); color: #6ee7b7; }
+  .status-btn.active.s-rejected      { border-color: #ef4444; background: rgba(239,68,68,.1);  color: #fca5a5; }
+  /* Narrative tag on card */
+  .narrative-tag {
+    display: inline-block;
+    font-size: 10px; font-weight: 600;
+    color: #8b5cf6; background: rgba(139,92,246,.1);
+    border: 1px solid rgba(139,92,246,.25);
+    border-radius: 4px; padding: 1px 6px;
+    margin-top: 5px; letter-spacing: .3px;
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  /* Report Library page */
+  .lib-tabs {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    padding: 16px 28px 0; margin-bottom: -4px;
+  }
+  .lib-tab {
+    background: #161616; border: 1px solid #2a2a2a; color: #888;
+    padding: 6px 14px; border-radius: 8px; font-size: 13px;
+    cursor: pointer; transition: all .15s; white-space: nowrap;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .lib-tab:hover { border-color: #555; color: #e5e5e5; }
+  .lib-tab.active { background: #8b5cf6; border-color: #8b5cf6; color: #fff; }
+  .lib-tab .lib-tab-count {
+    background: rgba(255,255,255,.15); border-radius: 999px;
+    font-size: 11px; padding: 0 6px; line-height: 18px;
+  }
+  .lib-tab:not(.active) .lib-tab-count { background: #1f1f1f; color: #555; }
+  .library-group { margin-bottom: 28px; }
+  .library-group-title {
+    font-size: 11px; font-weight: 600; color: #555;
+    text-transform: uppercase; letter-spacing: .7px;
+    margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
+  }
+  .library-group-title span {
+    background: #1a1a1a; border: 1px solid #2a2a2a;
+    color: #666; font-size: 11px; padding: 1px 8px; border-radius: 999px;
+  }
+  .panel-notes {
+    width: 100%; min-height: 90px; resize: vertical;
+    background: #111; border: 1px solid #2a2a2a; color: #e5e5e5;
+    padding: 10px 12px; border-radius: 8px; font-size: 13px;
+    font-family: inherit; line-height: 1.5; outline: none;
+  }
+  .panel-notes:focus { border-color: #8b5cf6; }
+  .panel-saved-note { font-size: 11px; color: #444; margin-top: 5px; height: 14px; }
+
+  /* Signals panel */
+  .signals-panel {
+    background: #111; border: 1px solid #1f1f1f;
+    border-radius: 12px; padding: 14px 18px;
+    margin-bottom: 18px;
+  }
+  .signals-header {
+    font-size: 11px; font-weight: 600; color: #555;
+    text-transform: uppercase; letter-spacing: .7px;
+    margin-bottom: 10px;
+  }
+  .signals-list { display: flex; flex-direction: column; gap: 6px; }
+  .signal-item {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px;
+  }
+  .signal-icon { font-size: 14px; flex-shrink: 0; line-height: 1; }
+  .signal-label { color: #d4d4d4; font-weight: 500; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .signal-count {
+    background: #1a1a1a; border: 1px solid #2a2a2a;
+    color: #888; font-size: 11px; padding: 2px 8px; border-radius: 999px;
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .signal-score { color: #555; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
+  .signal-breakout .signal-label { color: #22c55e; }
+  .signal-breakout .signal-count { border-color: rgba(34,197,94,.3); color: #22c55e; background: rgba(34,197,94,.07); }
+
+  /* Daily analysis checklist */
+  .daily-checklist {
+    background: #111; border: 1px solid #1f1f1f;
+    border-radius: 12px; padding: 14px 18px;
+    margin-bottom: 18px;
+    transition: border-color .2s;
+  }
+  .daily-checklist.complete { border-color: rgba(34,197,94,.35); }
+  .dc-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .dc-title {
+    font-size: 11px; font-weight: 600; color: #555;
+    text-transform: uppercase; letter-spacing: .7px;
+  }
+  .dc-progress {
+    background: #1a1a1a; border: 1px solid #2a2a2a;
+    color: #888; font-size: 11px; font-weight: 600;
+    padding: 2px 9px; border-radius: 999px;
+  }
+  .daily-checklist.complete .dc-progress {
+    background: rgba(34,197,94,.12); border-color: rgba(34,197,94,.3); color: #6ee7b7;
+  }
+  .dc-spacer { flex: 1; }
+  .dc-btn {
+    background: none; border: 1px solid #2a2a2a; color: #666;
+    padding: 3px 10px; border-radius: 6px; font-size: 11px;
+    cursor: pointer; transition: all .15s;
+  }
+  .dc-btn:hover { border-color: #555; color: #ccc; }
+  .dc-list { display: flex; flex-direction: column; gap: 2px; }
+  .dc-step {
+    display: flex; gap: 11px; align-items: flex-start;
+    padding: 8px 10px; border-radius: 8px;
+    cursor: pointer; transition: background .12s;
+    user-select: none;
+  }
+  .dc-step:hover { background: #161616; }
+  .dc-check {
+    width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px;
+    border: 1.5px solid #444; border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; color: transparent;
+    transition: all .15s;
+  }
+  .dc-step:hover .dc-check { border-color: #666; }
+  .dc-step.done .dc-check {
+    background: #22c55e; border-color: #22c55e; color: #03200d;
+  }
+  .dc-body { flex: 1; min-width: 0; }
+  .dc-text {
+    font-size: 13px; color: #d4d4d4; font-weight: 500;
+    line-height: 1.35;
+    transition: color .15s;
+  }
+  .dc-step.done .dc-text {
+    color: #555; text-decoration: line-through;
+    text-decoration-color: #333;
+  }
+  .dc-hint {
+    font-size: 11px; color: #555; line-height: 1.45;
+    margin-top: 2px;
+  }
+  .dc-step.done .dc-hint { color: #333; }
+
+  /* Daily Radar page */
+  .radar-section-title {
+    font-size: 11px; font-weight: 600; color: #555;
+    text-transform: uppercase; letter-spacing: .8px;
+    margin: 20px 0 10px; display: flex; align-items: center; gap: 8px;
+  }
+  .radar-section-title span {
+    background: #1a1a1a; border: 1px solid #2a2a2a;
+    color: #888; font-size: 11px; padding: 1px 8px; border-radius: 999px;
+  }
+  .radar-row {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 11px 14px; border-radius: 10px;
+    background: #111; border: 1px solid #1f1f1f;
+    margin-bottom: 6px; transition: border-color .15s;
+  }
+  .radar-row:hover { border-color: #333; }
+  .radar-thumb {
+    width: 88px; height: 50px; object-fit: cover;
+    border-radius: 6px; flex-shrink: 0; background: #1a1a1a;
+  }
+  .radar-info { flex: 1; min-width: 0; }
+  .radar-title {
+    font-size: 13px; font-weight: 500; color: #e5e5e5; line-height: 1.4;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-bottom: 4px;
+  }
+  .radar-meta { font-size: 11px; color: #666; }
+  .radar-metrics {
+    display: flex; flex-direction: column; align-items: flex-end;
+    gap: 4px; flex-shrink: 0; font-size: 12px; color: #888;
+  }
+  .radar-vel { color: #22c55e; font-weight: 700; font-size: 13px; }
+  .radar-vel.no-data { color: #444; font-size: 11px; }
+  .radar-outlier { color: #8b5cf6; font-weight: 600; }
+  .radar-head {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 4px; flex-wrap: wrap;
+  }
+  .copy-btn {
+    background: #8b5cf6; border: none; color: white;
+    padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: background .15s; margin-left: auto;
+  }
+  .copy-btn:hover { background: #7c3aed; }
+  .copy-btn.copied { background: #22c55e; color: #03200d; }
+
+  /* Velocity page */
+  .vel-head {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 18px; flex-wrap: wrap;
+  }
+  .vel-window { display: flex; gap: 4px; }
+  .vel-delta-badge {
+    position: absolute; top: 8px; left: 8px;
+    padding: 3px 9px; border-radius: 999px;
+    font-size: 12px; font-weight: 700;
+    background: rgba(34,197,94,.92); color: #03200d;
+  }
+  .vel-waiting {
+    text-align: center; padding: 80px 20px; color: #555;
+  }
+  .vel-waiting-icon { font-size: 40px; margin-bottom: 14px; }
+  .vel-waiting h3 { font-size: 18px; color: #e5e5e5; margin-bottom: 8px; font-weight: 600; }
+  .vel-waiting p  { font-size: 13px; line-height: 1.6; max-width: 400px; margin: 0 auto; }
+
+  /* AI Insights page */
+  #page-insights { max-width: 780px; }
+  .insights-panel { }
+  .insights-header {
+    font-size: 12px; font-weight: 600; color: #555;
+    text-transform: uppercase; letter-spacing: 0.6px;
+    margin-bottom: 14px; display: flex; align-items: center; gap: 6px;
+  }
+  .insight-cards { display: flex; flex-direction: column; gap: 10px; }
+  .insight-card {
+    background: linear-gradient(135deg, rgba(139,92,246,.07), rgba(139,92,246,.02));
+    border: 1px solid rgba(139,92,246,.18);
+    border-radius: 12px; padding: 14px 18px;
+    display: flex; gap: 14px; align-items: flex-start;
+  }
+  .insight-emoji { font-size: 20px; flex-shrink: 0; line-height: 1.4; }
+  .insight-text h5 { font-size: 14px; font-weight: 600; color: #e5e5e5; margin: 0 0 4px; }
+  .insight-text p  { font-size: 13px; color: #888; line-height: 1.6; margin: 0; }
+
+  /* Topic xViews (topic-relative performance) */
+  .topic-stat { font-size: 12px; color: #8b5cf6; font-weight: 500; margin-bottom: 10px; }
+  .xviews-badge {
+    position: absolute; bottom: 8px; left: 8px;
+    padding: 3px 9px; border-radius: 999px;
+    font-size: 12px; font-weight: 600;
+    background: rgba(0,0,0,.75); color: #e5e5e5;
+  }
+  .xviews-badge.xv-over  { background: rgba(34,197,94,.9);  color: #04210f; }
+  .xviews-badge.xv-under { background: rgba(239,68,68,.85); color: #fff; }
+  .xviews-badge.xv-par   { background: rgba(120,120,120,.8); color: #fff; }
+  .topic-baseline { font-size: 13px; color: #888; margin-bottom: 6px; }
+  .topic-sort { display: flex; gap: 4px; margin-bottom: 16px; }
+  .topic-sort button {
+    background: #161616; border: 1px solid #2a2a2a; color: #888;
+    padding: 6px 12px; border-radius: 8px; font-size: 12px;
+    cursor: pointer; transition: all .15s;
+  }
+  .topic-sort button:hover { color: #e5e5e5; border-color: #666; }
+  .topic-sort button.active { background: #8b5cf6; border-color: #8b5cf6; color: #fff; }
+
+  @media (max-width: 768px) {
+    .sidebar {
+      position: fixed; left: 0; top: 0;
+      transform: translateX(-100%);
+      transition: transform .2s;
+      z-index: 100;
+      box-shadow: 4px 0 24px rgba(0,0,0,.5);
+    }
+    .sidebar.open { transform: translateX(0); }
+    .hamburger { display: flex; align-items: center; justify-content: center; }
+    .topbar { padding: 12px 16px; }
+    .page { padding: 16px; }
+    .topbar h2 { font-size: 16px; }
+    .search-wrap input { width: 140px; }
+  }
+</style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="logo">TubeMetrics <span>Finance</span></div>
+
+  <div class="nav-section">
+    <div class="nav-section-title">Discover</div>
+    <div class="nav-item" data-page="radar"><span class="nav-icon">📡</span> Daily Radar</div>
+    <div class="nav-item active" data-page="outliers"><span class="nav-icon">🔥</span> Outliers</div>
+    <div class="nav-item" data-page="recent"><span class="nav-icon">📅</span> Recent</div>
+    <div class="nav-item" data-page="saved"><span class="nav-icon">📚</span> Report Library</div>
+    <div class="nav-item" data-page="insights"><span class="nav-icon">🤖</span> AI Insights</div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-title">Analyze</div>
+    <div class="nav-item" data-page="report"><span class="nav-icon">📝</span> Weekly Report</div>
+    <div class="nav-item" data-page="topics"><span class="nav-icon">📊</span> Topics</div>
+    <div class="nav-item" data-page="velocity"><span class="nav-icon">📈</span> Velocity</div>
+    <div class="nav-item" data-page="eqs"><span class="nav-icon">🎯</span> EQS Leaders</div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-title">Settings</div>
+    <div class="nav-item" data-page="channels"><span class="nav-icon">⚙️</span> Channels</div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="hamburger" id="hamburger">☰</button>
+      <h2 id="pageTitle">Outliers</h2>
+    </div>
+    <div class="filters" id="filters">
+      <div class="filter-group">
+        <span class="filter-label">Time</span>
+        <div class="date-tabs">
+          <button class="date-tab" data-days="1">24h</button>
+          <button class="date-tab" data-days="7">7d</button>
+          <button class="date-tab active" data-days="30">30d</button>
+          <button class="date-tab" data-days="0">All</button>
+        </div>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Format</span>
+        <div class="date-tabs" id="durTabs">
+          <button class="date-tab active" data-dur="long">Long</button>
+          <button class="date-tab" data-dur="short">Shorts</button>
+          <button class="date-tab" data-dur="all">All</button>
+        </div>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Size</span>
+        <select id="size">
+          <option value="all">All</option>
+          <option value="small">Small &lt;100K</option>
+          <option value="mid">Mid 100K–1M</option>
+          <option value="large">Large &gt;1M</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Sort</span>
+        <select id="sort">
+          <option value="outlier_score">Outlier</option>
+          <option value="confidence_score">Confidence</option>
+          <option value="eqs">EQS</option>
+          <option value="vph">VPH</option>
+          <option value="view_count">Views</option>
+          <option value="published_at">Newest</option>
+        </select>
+      </div>
+      <input type="number" id="minOutlier" placeholder="Min Outlier" step="0.5" min="0" style="width:110px"/>
+      <input type="number" id="minViews" placeholder="Min Views" min="0" style="width:110px"/>
+      <input type="number" id="minEqs" placeholder="Min EQS" step="0.1" min="0" style="width:90px"/>
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search" placeholder="Search..."/>
+      </div>
+      <button class="reset-btn" id="reset">Reset</button>
+    </div>
+  </div>
+
+  <section class="page" id="page-report">
+    <div id="reportContent"><div class="loading">Building report data...</div></div>
+  </section>
+
+  <section class="page" id="page-radar">
+    <div id="radarContent"><div class="loading">Building radar...</div></div>
+  </section>
+
+  <section class="page active" id="page-videos">
+    <div id="signalsPanel"></div>
+    <div class="stats" id="stats">Loading...</div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section class="page" id="page-insights">
+    <div id="insightsPanel"></div>
+  </section>
+
+  <section class="page" id="page-saved">
+    <div class="lib-tabs" id="libTabs"></div>
+    <div class="stats" id="savedStats"></div>
+    <div id="savedGrid"></div>
+  </section>
+
+  <section class="page" id="page-topics">
+    <div id="topicsContent"><div class="loading">Loading topics...</div></div>
+  </section>
+
+  <section class="page" id="page-velocity">
+    <div id="velocityContent"><div class="loading">Loading velocity data...</div></div>
+  </section>
+
+  <section class="page" id="page-channels">
+    <div id="channelsContent"><div class="loading">Loading channels...</div></div>
+  </section>
+</main>
+
+<aside class="side-panel" id="sidePanel">
+  <button class="panel-close" id="panelClose">×</button>
+  <div id="panelBody"></div>
+</aside>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const SUPABASE_URL = "https://dykfwypquadnuvrncfxl.supabase.co";
+const SUPABASE_KEY = "sb_publishable_QJmFAZRmSTPBliN4v0jDog_PySCWl6_";
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const $ = id => document.getElementById(id);
+
+const grid = $("grid"), stats = $("stats");
+const savedGrid = $("savedGrid"), savedStats = $("savedStats");
+const channelsContent = $("channelsContent");
+const pageTitle = $("pageTitle");
+const filtersEl = $("filters");
+const sidebar = $("sidebar");
+const sizeEl = $("size"), sortEl = $("sort");
+const minOutlierEl = $("minOutlier"), minViewsEl = $("minViews"), minEqsEl = $("minEqs");
+const searchEl = $("search"), resetBtn = $("reset");
+const dayTabs = document.querySelectorAll("[data-days]");
+const durTabs = document.querySelectorAll("[data-dur]");
+const navItems = document.querySelectorAll(".nav-item");
+const panelEl   = $("sidePanel");
+const panelBody = $("panelBody");
+
+let activeDays = 30;
+let activeDur = localStorage.getItem("tm_dur_filter") || "long";
+durTabs.forEach(t => {
+  t.classList.toggle("active", t.dataset.dur === activeDur);
+});
+let cachedData = [];
+let currentPage = "outliers";
+const renderedVideos = new Map();
+
+const PAGES = {
+  radar:    { title: "Daily Radar",   showFilters: false },
+  report:   { title: "Weekly Report", showFilters: false },
+  outliers: { title: "Outliers",     showFilters: true,  defaultSort: "outlier_score" },
+  recent:   { title: "Recent",      showFilters: true,  defaultSort: "published_at" },
+  saved:    { title: "Report Library", showFilters: false },
+  insights: { title: "AI Insights", showFilters: false },
+  topics:   { title: "Topics",      showFilters: false },
+  velocity: { title: "Velocity",    showFilters: false },
+  eqs:      { title: "EQS Leaders", showFilters: true, defaultSort: "eqs", defaultMinViews: 10000 },
+  channels: { title: "Channels",    showFilters: false }
+};
+
+/* ---------- helpers ---------- */
+function fmt(n) {
+  if (n >= 1e6) return (n/1e6).toFixed(1)+"M";
+  if (n >= 1e3) return (n/1e3).toFixed(1)+"K";
+  return String(n);
+}
+function ago(date) {
+  const s = Math.floor((Date.now() - new Date(date)) / 1000);
+  const d = Math.floor(s/86400);
+  if (d > 365) return Math.floor(d/365)+"y ago";
+  if (d > 30)  return Math.floor(d/30)+"mo ago";
+  if (d > 0)   return d+"d ago";
+  const h = Math.floor(s/3600);
+  return h > 0 ? h+"h ago" : "just now";
+}
+function sizeTag(subs) {
+  if (subs < 100_000) return "small";
+  if (subs < 1_000_000) return "mid";
+  return "large";
+}
+function escapeHtml(s) {
+  return String(s ?? "").replace(/[&<>"']/g, c =>
+    ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "\"":"&quot;", "'":"&#39;" }[c]));
+}
+
+/* ---------- Topic xViews ---------- */
+// xViews = how a video performed RELATIVE TO ITS THEME, after removing channel size.
+// The topic norm uses median outlier_score (channel-size-neutral, like xG removes
+// chance quality). medViews is shown only as human context ("topic typically pulls 40K").
+function median(arr) {
+  const a = arr.filter(x => typeof x === "number" && isFinite(x)).sort((x, y) => x - y);
+  if (!a.length) return null;
+  const m = Math.floor(a.length / 2);
+  return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
+}
+function xvClass(xv) { return xv >= 1.3 ? "xv-over" : xv <= 0.7 ? "xv-under" : "xv-par"; }
+function topicStats(cluster) {
+  const vids = (cluster.video_ids || []).map(id => topicVideoMap.get(id)).filter(Boolean);
+  const views = vids.map(v => v.view_count || 0).filter(x => x > 0);
+  const outs  = vids.map(v => v.outlier_score).filter(x => typeof x === "number" && x > 0);
+  return { n: vids.length, medViews: median(views), medOutlier: median(outs) };
+}
+function xViews(v, st) {
+  if (!st || !st.medOutlier) return null;
+  const o = v.outlier_score;
+  if (typeof o !== "number" || o <= 0) return null;
+  return o / st.medOutlier;
+}
+
+/* ---------- Report Library ---------- */
+const reportMap = new Map(); // video_id → status
+
+async function loadReportMap() {
+  const { data } = await supabase
+    .from("report_candidates")
+    .select("video_id, status");
+  if (data) data.forEach(r => reportMap.set(r.video_id, r.status));
+}
+
+function isInLibrary(id) { return reportMap.has(id); }
+
+function updateBookmarkUI(videoId) {
+  const inLib = reportMap.has(videoId);
+  document.querySelectorAll(`.save-btn[data-id="${CSS.escape(videoId)}"]`).forEach(b => {
+    b.classList.toggle("saved", inLib);
+    b.title = inLib ? "Remove from library" : "Add to library";
+  });
+}
+
+async function toggleBookmark(videoId) {
+  if (reportMap.has(videoId)) {
+    await supabase.from("report_candidates").delete().eq("video_id", videoId);
+    reportMap.delete(videoId);
+  } else {
+    await supabase.from("report_candidates").upsert(
+      { video_id: videoId, status: "watch_later", updated_at: new Date().toISOString() },
+      { onConflict: "video_id" }
+    );
+    reportMap.set(videoId, "watch_later");
+  }
+  updateBookmarkUI(videoId);
+  if (currentPage === "saved") loadReportLibrary();
+}
+
+// kept as no-ops so any stale callers don't crash (removed below)
+function isSaved(id) { return isInLibrary(id); }
+
+/* ---------- card render ---------- */
+function bookmarkSvg() {
+  return `<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`;
+}
+function sigClass(score) {
+  if (score >= 10) return "sig-extreme";
+  if (score >= 5)  return "sig-strong";
+  if (score >= 3)  return "sig-moderate";
+  return "sig-low";
+}
+function cardHTML(v, opts = {}) {
+  const subs = v.channels?.subscriber_count || 0;
+  const tag = sizeTag(subs);
+  const inLib = isInLibrary(v.video_id);
+  const score = v.outlier_score || 0;
+  const ntag = narrativeTag(v);
+  return `
+  <a class="card" href="https://youtube.com/watch?v=${encodeURIComponent(v.video_id)}" target="_blank" rel="noopener" data-id="${v.video_id}">
+    <div class="thumb">
+      <img src="${escapeHtml(v.thumbnail_url)}" alt="" loading="lazy"/>
+      <div class="size-tag ${tag}">${fmt(subs)} subs</div>
+      <button class="save-btn ${inLib?'saved':''}" data-id="${escapeHtml(v.video_id)}" title="${inLib?'Remove from library':'Add to library'}">${bookmarkSvg()}</button>
+      <div class="score-badge ${sigClass(score)}">${score.toFixed(1)}x</div>
+      ${opts.xviews != null ? `<div class="xviews-badge ${xvClass(opts.xviews)}" title="${escapeHtml(opts.xvTip || "")}">xV ${opts.xviews.toFixed(1)}×</div>` : ""}
+    </div>
+    <div class="body">
+      <div class="title">${escapeHtml(v.title)}</div>
+      <div class="channel">${escapeHtml(v.channels?.title || "—")} · ${ago(v.published_at)}</div>
+      ${ntag ? `<div class="narrative-tag">${escapeHtml(ntag)}</div>` : ""}
+      <div class="metrics">
+        <div class="m-secondary">VPH<span>${fmt(v.vph||0)}/h</span></div>
+        <div class="m-secondary">Views<span>${fmt(v.view_count||0)}</span></div>
+        <div class="m-primary">Outlier<span>${score.toFixed(1)}x</span></div>
+        <div class="m-dim">EQS<span>${(v.eqs||0).toFixed(2)}</span></div>
+      </div>
+    </div>
+  </a>`;
+}
+
+function skeletonHTML(n=12) {
+  return Array(n).fill(`
+    <div class="skeleton">
+      <div class="skeleton-thumb"></div>
+      <div class="skeleton-body">
+        <div class="skeleton-line" style="width:85%"></div>
+        <div class="skeleton-line" style="width:55%"></div>
+        <div class="skeleton-line" style="width:40%; margin-top:8px"></div>
+      </div>
+    </div>`).join("");
+}
+
+/* ---------- Outliers / Recent / EQS ---------- */
+/* ---------- Signals ---------- */
+const SIGNAL_GROUPS = [
+  { id: "retirement",  label: "Retirement / Withdrawal",  tag: "Retirement",   keys: ["retirement", "retire", "401k", "pension", "social security", "withdrawal", "withdraw", "roth", " ira "] },
+  { id: "realestate",  label: "Real Estate / Housing",    tag: "Real Estate",  keys: ["real estate", "housing", "mortgage", "landlord", "rental property", "airbnb", "home price"] },
+  { id: "crypto",      label: "Crypto",                   tag: "Crypto",       keys: ["bitcoin", "crypto", "ethereum", "btc", "eth", "coinbase", "altcoin", "defi", "nft"] },
+  { id: "gold",        label: "Gold / Inflation",         tag: "Gold/Inflation", keys: ["gold", "silver", "inflation", "commodit", "hedge"] },
+  { id: "tech",        label: "Tech / AI Stocks",         tag: "Tech/AI",      keys: ["nvidia", "ai stock", "tech stock", "semiconductor", "magnificent", "meta ", "apple stock", "microsoft stock"] },
+  { id: "tax",         label: "Tax / IRS",                tag: "Tax/IRS",      keys: ["tax ", "taxes", "irs", "deduction", "write-off", "write off", "tax return", "tax season"] },
+  { id: "insurance",   label: "Insurance / Annuity",      tag: "Insurance",    keys: ["insurance", "annuity", "term life", "whole life", "life insurance"] },
+  { id: "debt",        label: "Debt / Credit",            tag: "Debt/Credit",  keys: ["debt", "credit card", "student loan", "interest rate", "pay off", "payoff", "credit score"] },
+  { id: "macro",       label: "Macro / Geopolitics",      tag: "Macro",        keys: ["china", "tariff", "trade war", "trump", "federal reserve", "rate cut", "rate hike", "recession", "crash", "collapse"] },
+  { id: "income",      label: "Income / Side Hustle",     tag: "Income",       keys: ["side hustle", "passive income", "make money", "extra income", "financial freedom", "fire movement"] },
+  { id: "budget",      label: "Budget / Savings",         tag: "Budget",       keys: ["budget", "frugal", "save money", "saving", "cut spending", "minimalist", "no spend"] },
+  { id: "stocks",      label: "Stocks / Investing",       tag: "Stocks",       keys: ["stock", "invest", "s&p", "dividend", "portfolio", "etf", "index fund", "vanguard", "fidelity"] },
+];
+
+function narrativeTag(v) {
+  const t = (" " + (v.title || "").toLowerCase() + " ");
+  for (const g of SIGNAL_GROUPS) {
+    if (g.keys.some(k => t.includes(k))) return g.tag;
+  }
+  return null;
+}
+
+function computeSignals(videos) {
+  const THRESHOLD = 2.0;
+  const groups = Object.fromEntries(SIGNAL_GROUPS.map(g => [g.id, { ...g, vids: [], total: 0 }]));
+
+  for (const v of videos) {
+    const score = v.outlier_score || 0;
+    if (score < THRESHOLD) continue;
+    const t = (" " + (v.title || "").toLowerCase() + " ");
+    for (const g of SIGNAL_GROUPS) {
+      if (g.keys.some(k => t.includes(k))) {
+        groups[g.id].vids.push(v);
+        groups[g.id].total += score;
+        break; // first matching group wins (ordered specific → broad)
+      }
+    }
+  }
+
+  const ranked = Object.values(groups)
+    .filter(g => g.vids.length > 0)
+    .map(g => ({
+      label:    g.label,
+      count:    g.vids.length,
+      avgScore: g.total / g.vids.length,
+      maxScore: Math.max(...g.vids.map(v => v.outlier_score || 0)),
+      weight:   g.vids.length * (g.total / g.vids.length),
+    }))
+    .sort((a, b) => b.weight - a.weight)
+    .slice(0, 3);
+
+  const breakout = videos
+    .filter(v => (v.channels?.subscriber_count || 0) < 300000
+              && (v.channels?.subscriber_count || 0) > 0
+              && (v.outlier_score || 0) >= 5)
+    .sort((a, b) => (b.outlier_score || 0) - (a.outlier_score || 0))[0] || null;
+
+  return { ranked, breakout };
+}
+
+function renderSignals({ ranked, breakout }) {
+  const panel = $("signalsPanel");
+  if (!panel) return;
+  if (!ranked.length && !breakout) { panel.innerHTML = ""; return; }
+
+  const icon = s => s >= 7 ? "🔴" : s >= 4 ? "🟠" : "🟡";
+
+  const rows = ranked.map(s => `
+    <div class="signal-item">
+      <span class="signal-icon">${icon(s.avgScore)}</span>
+      <span class="signal-label">${escapeHtml(s.label)}</span>
+      <span class="signal-count">${s.count} outlier${s.count > 1 ? "s" : ""}</span>
+      <span class="signal-score">avg ${s.avgScore.toFixed(1)}x · max ${s.maxScore.toFixed(1)}x</span>
+    </div>`).join("");
+
+  const bRow = breakout ? `
+    <div class="signal-item signal-breakout">
+      <span class="signal-icon">🟢</span>
+      <span class="signal-label">Small breakout: ${escapeHtml(breakout.channels?.title || "—")}</span>
+      <span class="signal-count">${(breakout.outlier_score || 0).toFixed(1)}x</span>
+      <span class="signal-score">${fmt(breakout.channels?.subscriber_count || 0)} subs</span>
+    </div>` : "";
+
+  panel.innerHTML = `
+    <div class="signals-panel">
+      <div class="signals-header">📊 Strongest signals</div>
+      <div class="signals-list">${rows}${bRow}</div>
+    </div>`;
+}
+
+function render() {
+  const size = sizeEl.value;
+  const filtered = cachedData.filter(v => {
+    const subs = v.channels?.subscriber_count || 0;
+    if (size !== "all" && sizeTag(subs) !== size) return false;
+    return true;
+  });
+
+  filtered.forEach(v => renderedVideos.set(v.video_id, v));
+
+  stats.textContent = `${filtered.length} videos`;
+  renderSignals(computeSignals(filtered));
+
+  if (!filtered.length) {
+    grid.innerHTML = '<div class="empty">No videos match your filters</div>';
+    return;
+  }
+  grid.innerHTML = filtered.map(cardHTML).join("");
+}
+
+async function loadVideos() {
+  grid.innerHTML = skeletonHTML();
+
+  let query = supabase
+    .from("videos")
+    .select("*, channels(title, subscriber_count)")
+    .order(sortEl.value, { ascending: false })
+    .limit(activeDays === 0 ? 600 : 300);
+
+  if (activeDays > 0) {
+    const since = new Date(Date.now() - activeDays * 86400000).toISOString();
+    query = query.gte("published_at", since);
+  }
+
+  const minOutlier = parseFloat(minOutlierEl.value);
+  const minViews   = parseInt(minViewsEl.value);
+  const minEqs     = parseFloat(minEqsEl.value);
+  if (!isNaN(minOutlier)) query = query.gte("outlier_score", minOutlier);
+  if (!isNaN(minViews))   query = query.gte("view_count", minViews);
+  if (!isNaN(minEqs))     query = query.gte("eqs", minEqs);
+  if (activeDur === "long")  query = query.gte("duration_seconds", 60);
+  if (activeDur === "short") query = query.lt("duration_seconds", 60);
+
+  const q = searchEl.value.trim();
+  if (q) query = query.ilike("title", `%${q}%`);
+
+  const { data, error } = await query;
+  if (error) {
+    grid.innerHTML = `<div class="empty">Error: ${error.message}</div>`;
+    return;
+  }
+  cachedData = data || [];
+  render();
+}
+
+/* ---------- Report Library ---------- */
+const STATUS_ORDER = [
+  { key: "watch_later",    label: "👀 Watch Later"      },
+  { key: "candidate",      label: "📋 Report Candidate" },
+  { key: "evidence",       label: "📊 Evidence"         },
+  { key: "title_pattern",  label: "🏷️ Title Pattern"    },
+  { key: "small_breakout", label: "🚀 Small Breakout"   },
+  { key: "used_in_report", label: "✅ Used in Report"   },
+  { key: "rejected",       label: "❌ Rejected"         },
+];
+
+let libActiveTab = "all"; // persists while page is open
+
+async function loadReportLibrary() {
+  const libTabs = $("libTabs");
+  savedGrid.innerHTML = '<div class="loading">Loading library…</div>';
+  savedStats.textContent = "";
+  if (libTabs) libTabs.innerHTML = "";
+
+  const { data: rows, error } = await supabase
+    .from("report_candidates")
+    .select("video_id, status, notes, updated_at, videos(video_id, title, thumbnail_url, view_count, like_count, vph, outlier_score, eqs, published_at, duration_seconds, channels(title, subscriber_count))")
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    savedGrid.innerHTML = `<div class="empty">Error: ${error.message}</div>`;
+    return;
+  }
+  if (!rows || !rows.length) {
+    savedGrid.innerHTML = '<div class="empty">Library is empty. Click the bookmark icon on any card to add a video.</div>';
+    savedStats.textContent = "0 videos";
+    return;
+  }
+
+  // group by status
+  const groups = new Map();
+  STATUS_ORDER.forEach(s => groups.set(s.key, []));
+  rows.forEach(r => {
+    const v = r.videos;
+    if (!v) return;
+    const key = r.status || "watch_later";
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(v);
+    renderedVideos.set(v.video_id, v);
+  });
+
+  const totalCount = rows.filter(r => r.videos).length;
+
+  // build tabs — only for statuses that have videos
+  const activeTabs = STATUS_ORDER.filter(s => (groups.get(s.key) || []).length > 0);
+  if (libTabs && activeTabs.length > 1) {
+    const tabDefs = [{ key: "all", label: "All", count: totalCount }, ...activeTabs.map(s => ({ key: s.key, label: s.label, count: groups.get(s.key).length }))];
+    libTabs.innerHTML = tabDefs.map(t => `
+      <button class="lib-tab ${libActiveTab === t.key ? "active" : ""}" data-tab="${t.key}">
+        ${escapeHtml(t.label)} <span class="lib-tab-count">${t.count}</span>
+      </button>`).join("");
+    libTabs.querySelectorAll(".lib-tab").forEach(btn => {
+      btn.addEventListener("click", () => {
+        libActiveTab = btn.dataset.tab;
+        renderLibraryContent(groups, totalCount);
+        libTabs.querySelectorAll(".lib-tab").forEach(b => b.classList.toggle("active", b.dataset.tab === libActiveTab));
+      });
+    });
+  }
+
+  renderLibraryContent(groups, totalCount);
+}
+
+function renderLibraryContent(groups, totalCount) {
+  const filter = libActiveTab;
+  let html = "";
+  let count = 0;
+
+  if (filter === "all") {
+    for (const { key, label } of STATUS_ORDER) {
+      const vids = groups.get(key) || [];
+      if (!vids.length) continue;
+      count += vids.length;
+      html += `
+        <div class="library-group">
+          <div class="library-group-title">${label} <span>${vids.length}</span></div>
+          <div class="grid">${vids.map(v => cardHTML(v)).join("")}</div>
+        </div>`;
+    }
+  } else {
+    const vids = groups.get(filter) || [];
+    count = vids.length;
+    html = vids.length
+      ? `<div class="grid" style="padding-top:16px">${vids.map(v => cardHTML(v)).join("")}</div>`
+      : '<div class="empty" style="padding-top:20px">No videos with this status.</div>';
+  }
+
+  savedStats.textContent = `${count} video${count !== 1 ? "s" : ""}`;
+  savedGrid.innerHTML = html;
+}
+
+/* ---------- Channels ---------- */
+async function loadChannels() {
+  channelsContent.innerHTML = '<div class="loading">Loading channels...</div>';
+  const { data, error } = await supabase
+    .from("channels")
+    .select("title, subscriber_count, avg_views, updated_at, videos(count)")
+    .order("subscriber_count", { ascending: false });
+
+  if (error) {
+    channelsContent.innerHTML = `<div class="empty">Error: ${error.message}</div>`;
+    return;
+  }
+  if (!data || !data.length) {
+    channelsContent.innerHTML = '<div class="empty">No channels yet</div>';
+    return;
+  }
+
+  const rows = data.map(c => {
+    const rawVideoCount = c.videos?.[0]?.count;
+    const videoCount = typeof rawVideoCount === "number" ? rawVideoCount : null;
+    return { ...c, video_count: videoCount };
+  });
+
+  channelsContent.innerHTML = `
+    <div class="stats">${rows.length} channels</div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Channel</th>
+            <th style="text-align:right">Subscribers</th>
+            <th style="text-align:right">Avg Views</th>
+            <th style="text-align:right">Videos in DB</th>
+            <th style="text-align:right">Last Updated</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(c => `
+            <tr>
+              <td>${escapeHtml(c.title || "—")}</td>
+              <td style="text-align:right">${fmt(c.subscriber_count || 0)}</td>
+              <td style="text-align:right">${c.avg_views != null ? fmt(c.avg_views) : "—"}</td>
+              <td style="text-align:right">${c.video_count ?? "—"}</td>
+              <td style="text-align:right; color:#888">${c.updated_at ? ago(c.updated_at) : "—"}</td>
+            </tr>`).join("")}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+/* ---------- Topics (AI clusters) ---------- */
+const topicsContent = $("topicsContent");
+let topicWeeks = [];
+let currentClusters = [];
+let currentTopicWeek = null;
+const topicVideoMap = new Map(); // video_id -> full row for the active week
+
+async function loadTopics(week) {
+  topicsContent.innerHTML = '<div class="loading">Loading topics...</div>';
+
+  // список недель (для селектора)
+  if (!week) {
+    const { data: wk, error: wErr } = await supabase
+      .from("topic_clusters")
+      .select("week_start")
+      .order("week_start", { ascending: false });
+    if (wErr) { topicsContent.innerHTML = `<div class="empty">Error: ${wErr.message}</div>`; return; }
+    topicWeeks = [...new Set((wk || []).map(r => r.week_start))];
+    if (!topicWeeks.length) {
+      topicsContent.innerHTML = '<div class="empty">No topic clusters yet. The weekly analysis runs Mondays.</div>';
+      return;
+    }
+    week = topicWeeks[0];
+  }
+  currentTopicWeek = week;
+
+  // кластеры выбранной недели
+  const { data: clusters, error: cErr } = await supabase
+    .from("topic_clusters")
+    .select("*")
+    .eq("week_start", week)
+    .order("video_count", { ascending: false });
+  if (cErr) { topicsContent.innerHTML = `<div class="empty">Error: ${cErr.message}</div>`; return; }
+  currentClusters = clusters || [];
+
+  // все видео недели одним запросом (для превью-заголовков и drill-down)
+  const allIds = [...new Set(currentClusters.flatMap(c => c.video_ids || []))];
+  topicVideoMap.clear();
+  if (allIds.length) {
+    const { data: vids } = await supabase
+      .from("videos")
+      .select("*, channels(title, subscriber_count)")
+      .in("video_id", allIds);
+    (vids || []).forEach(v => { topicVideoMap.set(v.video_id, v); renderedVideos.set(v.video_id, v); });
+  }
+
+  renderClusters(week);
+}
+
+function renderClusters(week) {
+  const weekLabel = d => new Date(d + "T00:00:00Z")
+    .toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+  const options = topicWeeks.map(w =>
+    `<option value="${w}" ${w === week ? "selected" : ""}>Week of ${weekLabel(w)}</option>`).join("");
+
+  const head = `
+    <div class="topics-head">
+      <div class="stats">${currentClusters.length} themes · top outliers of the week</div>
+      <select class="week-select" id="weekSelect">${options}</select>
+    </div>`;
+
+  if (!currentClusters.length) {
+    topicsContent.innerHTML = head + '<div class="empty">No clusters for this week</div>';
+    $("weekSelect").addEventListener("change", e => loadTopics(e.target.value));
+    return;
+  }
+
+  const cards = currentClusters.map((c, i) => {
+    const samples = (c.video_ids || []).slice(0, 3)
+      .map(id => topicVideoMap.get(id)?.title)
+      .filter(Boolean)
+      .map(t => `<div>• ${escapeHtml(t)}</div>`).join("");
+    const st = topicStats(c);
+    const statLine = st.medViews != null
+      ? `<div class="topic-stat">Typical ${fmt(Math.round(st.medViews))} views${st.medOutlier != null ? ` · ${st.medOutlier.toFixed(1)}× median lift` : ""} · ${st.n} videos</div>`
+      : "";
+    return `
+      <div class="cluster-card" data-cluster="${i}">
+        <h3>${escapeHtml(c.label)} <span class="cluster-count">${c.video_count}</span></h3>
+        ${statLine}
+        ${c.description ? `<div class="cluster-desc">${escapeHtml(c.description)}</div>` : ""}
+        <div class="cluster-samples">${samples}</div>
+      </div>`;
+  }).join("");
+
+  topicsContent.innerHTML = head + `<div class="cluster-grid">${cards}</div>`;
+  $("weekSelect").addEventListener("change", e => loadTopics(e.target.value));
+  document.querySelectorAll(".cluster-card").forEach(card =>
+    card.addEventListener("click", () => openCluster(parseInt(card.dataset.cluster))));
+}
+
+let topicSort = "outlier"; // "outlier" | "xviews"
+function openCluster(idx) {
+  const c = currentClusters[idx];
+  if (!c) return;
+  const st = topicStats(c);
+  let vids = (c.video_ids || [])
+    .map(id => topicVideoMap.get(id))
+    .filter(Boolean)
+    .map(v => ({ ...v, _xv: xViews(v, st) }));
+
+  if (topicSort === "xviews") {
+    vids.sort((a, b) => (b._xv ?? -Infinity) - (a._xv ?? -Infinity));
+  } else {
+    vids.sort((a, b) => (b.outlier_score || 0) - (a.outlier_score || 0));
+  }
+
+  const baseline = st.medViews != null
+    ? `<div class="topic-baseline">Topic baseline: ${fmt(Math.round(st.medViews))} median views${st.medOutlier != null ? ` · ${st.medOutlier.toFixed(1)}× median outlier` : ""} (${st.n} videos)</div>`
+    : "";
+  const sortBar = st.medOutlier != null
+    ? `<div class="topic-sort">
+         <button data-sort="outlier" class="${topicSort === "outlier" ? "active" : ""}">Sort: Outlier</button>
+         <button data-sort="xviews" class="${topicSort === "xviews" ? "active" : ""}">Sort: Topic xViews</button>
+       </div>`
+    : "";
+
+  topicsContent.innerHTML = `
+    <button class="back-btn" id="topicsBack">← All themes</button>
+    <div class="stats"><strong style="color:#e5e5e5">${escapeHtml(c.label)}</strong> · ${vids.length} videos</div>
+    ${c.description ? `<div class="cluster-desc" style="margin-bottom:10px">${escapeHtml(c.description)}</div>` : ""}
+    ${baseline}
+    ${sortBar}
+    <div class="grid">${vids.map(v => cardHTML(v, {
+      xviews: v._xv,
+      xvTip: v._xv != null
+        ? `${v._xv.toFixed(2)}× the topic's typical lift (channel-size-neutral) · ${fmt(v.view_count || 0)} views vs topic median ${st.medViews != null ? fmt(Math.round(st.medViews)) : "—"}`
+        : ""
+    })).join("")}</div>`;
+
+  $("topicsBack").addEventListener("click", () => renderClusters(currentTopicWeek));
+  document.querySelectorAll(".topic-sort button").forEach(b =>
+    b.addEventListener("click", () => { topicSort = b.dataset.sort; openCluster(idx); }));
+}
+
+/* ---------- Weekly Report ---------- */
+function buildWeeklyPrompt(videos, accel, clusters, insights, stats) {
+  const weekOf = new Date(Date.now() - 7 * 86400000)
+    .toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+
+  const fmtV = (v, vel7d) => {
+    const subs = v.channels?.subscriber_count || 0;
+    const size = subs < 100000 ? "small" : subs < 1000000 ? "mid" : "large";
+    const velStr = vel7d != null ? ` | velocity_7d: +${fmt(vel7d)}` : "";
+    return `• "${v.title}"
+  ${v.channels?.title || "—"} | ${fmt(subs)} subs (${size}) | outlier: ${(v.outlier_score||0).toFixed(1)}x | views: ${fmt(v.view_count||0)} | VPH: ${fmt(v.vph||0)}/h | age: ${ago(v.published_at)}${velStr}`;
+  };
+
+  const clusterCtx = clusters.length
+    ? clusters.map(c => `• ${c.label} (${c.video_count} videos): ${c.description || ""}`).join("\n")
+    : "No cluster data this week.";
+
+  const insightCtx = insights?.insights?.length
+    ? insights.insights.map(i => `• ${i.emoji || ""} ${i.headline}: ${i.detail}`).join("\n")
+    : "No weekly insights generated yet.";
+
+  const topVideos = videos.slice(0, 40).map(v => fmtV(v, v.vel7d)).join("\n");
+  const accelStr  = accel.length
+    ? accel.slice(0, 15).map(v => fmtV(v, v.vel7d)).join("\n")
+    : "No velocity data yet (accumulating — check after 7 daily cron runs).";
+
+  const sizeBreakdown = `Small (<100K subs): ${stats.small} videos | Mid (100K–1M): ${stats.mid} | Large (>1M): ${stats.large}`;
+
+  return `FINANCE YOUTUBE OPPORTUNITY REPORT — Week of ${weekOf}
+${"═".repeat(65)}
+EVIDENCE BASE
+${"═".repeat(65)}
+Total videos analyzed: ${videos.length}
+${sizeBreakdown}
+Top outlier score: ${videos[0] ? (videos[0].outlier_score||0).toFixed(1)+"x" : "—"}
+Median outlier score: ${stats.medianOutlier}x
+
+${"═".repeat(65)}
+ACTIVE NARRATIVE THEMES (from topic_clusters)
+${"═".repeat(65)}
+${clusterCtx}
+
+${"═".repeat(65)}
+EXISTING WEEKLY INSIGHTS (auto-generated context)
+${"═".repeat(65)}
+${insightCtx}
+
+${"═".repeat(65)}
+TOP 40 OUTLIER VIDEOS THIS WEEK (ranked by outlier score)
+${"═".repeat(65)}
+${topVideos}
+
+${"═".repeat(65)}
+TOP ACCELERATING VIDEOS (ranked by velocity_7d)
+${"═".repeat(65)}
+${accelStr}
+
+${"═".repeat(65)}
+YOUR TASK — GENERATE THE WEEKLY REPORT
+${"═".repeat(65)}
+You are a Finance YouTube attention intelligence analyst writing a paid weekly report for finance content creators.
+
+Generate the Finance YouTube Opportunity Report using EXACTLY this 8-section structure:
+
+━━━ 1. EXECUTIVE SUMMARY ━━━
+2–3 sentences. What defined finance YouTube attention this week? Lead with the clearest signal.
+
+━━━ 2. TOP BREAKOUT NARRATIVES (5–7) ━━━
+For each narrative:
+  Name: [theme name]
+  Why it matters: [1–2 sentences]
+  Evidence: [video count, outlier range, examples]
+  Channels that won: [specific channels]
+  Confidence: HIGH / MEDIUM / LOW
+
+━━━ 3. SMALL CHANNEL OPPORTUNITIES ━━━
+Themes where channels under 300K subs outperform. For each:
+  Theme | Why small channels have an edge | Best-performing example | Suggested angles
+
+━━━ 4. WINNING TITLE PATTERNS ━━━
+Extract 4–6 repeating title formulas from the outlier list. Format:
+  Pattern: "Formula here with [BLANK]"
+  Example: actual video title
+  Why it works: [1 sentence]
+
+━━━ 5. VIDEOS WORTH STUDYING (top 8–10) ━━━
+For each:
+  Title + channel
+  Why it worked (format, hook, timing, topic)
+  What a creator can borrow
+
+━━━ 6. TOPICS COOLING DOWN ━━━
+2–4 themes showing signs of saturation or declining outlier scores. Be honest about confidence level.
+
+━━━ 7. SUGGESTED VIDEO IDEAS (5–8) ━━━
+For each idea:
+  Draft title:
+  Target audience:
+  Why now (evidence):
+  Risk/weakness:
+  Confidence: HIGH / MEDIUM / LOW
+
+━━━ 8. WHAT TO AVOID THIS WEEK ━━━
+Overused angles, low-signal topics, or formats that underperformed. Specific, not generic.
+
+${"═".repeat(65)}
+MANDATORY RULES
+${"═".repeat(65)}
+— No financial advice, price predictions, or investment recommendations
+— No claims that any stock, asset, or market will rise or fall
+— Every serious claim needs evidence (video count, outlier scores, channel names)
+— Mark weak signals: "(low confidence — N=${" "}videos, limited sample)"
+— Write for a finance creator choosing what to film next — not for an investor
+— No filler, no generic SEO advice
+— If evidence is thin for a section, say so clearly rather than inventing patterns`;
+}
+
+async function loadWeeklyReport() {
+  const content = $("reportContent");
+  content.innerHTML = '<div class="loading">Pulling week\'s evidence...</div>';
+
+  const since7d  = new Date(Date.now() -  7 * 86400000).toISOString();
+  const since8d  = new Date(Date.now() -  8 * 86400000).toISOString();
+
+  // --- velocity from video_history (7-day window) ---
+  const velMap7 = new Map();
+  try {
+    const { data: hist } = await supabase
+      .from("video_history")
+      .select("video_id, view_count, captured_at")
+      .gte("captured_at", since8d)
+      .order("captured_at", { ascending: true });
+
+    if (hist?.length) {
+      const byVid = new Map();
+      for (const row of hist) {
+        if (!byVid.has(row.video_id)) byVid.set(row.video_id, { first: row, last: row });
+        else byVid.get(row.video_id).last = row;
+      }
+      for (const [id, { first, last }] of byVid) {
+        if (first.captured_at !== last.captured_at) {
+          const delta = last.view_count - first.view_count;
+          if (delta > 0) velMap7.set(id, delta);
+        }
+      }
+    }
+  } catch { /* non-fatal */ }
+
+  // --- top outlier videos this week ---
+  const { data: weekVideos, error: vErr } = await supabase
+    .from("videos")
+    .select("*, channels(title, subscriber_count)")
+    .gte("published_at", since7d)
+    .gte("duration_seconds", 60)
+    .order("outlier_score", { ascending: false })
+    .limit(100);
+
+  if (vErr) {
+    content.innerHTML = `<div class="empty">Error: ${vErr.message}</div>`;
+    return;
+  }
+
+  const allVideos = (weekVideos || []).map(v => ({ ...v, vel7d: velMap7.get(v.video_id) ?? null }));
+
+  // --- top accelerating (by vel7d) ---
+  const accelVideos = [...allVideos]
+    .filter(v => v.vel7d != null)
+    .sort((a, b) => (b.vel7d || 0) - (a.vel7d || 0))
+    .slice(0, 20);
+
+  // --- clusters ---
+  const { data: clusters } = await supabase
+    .from("topic_clusters")
+    .select("label, description, video_count, week_start")
+    .order("week_start", { ascending: false })
+    .order("video_count",  { ascending: false })
+    .limit(12);
+
+  // --- weekly insights (context) ---
+  const { data: insights } = await supabase
+    .from("weekly_insights")
+    .select("week_start, insights")
+    .order("week_start", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  // --- compute stats ---
+  const scores = allVideos.map(v => v.outlier_score || 0).filter(s => s > 0).sort((a,b)=>a-b);
+  const medianOutlier = scores.length
+    ? scores[Math.floor(scores.length / 2)].toFixed(1)
+    : "—";
+  const stats = {
+    small:  allVideos.filter(v => (v.channels?.subscriber_count||0) < 100000).length,
+    mid:    allVideos.filter(v => { const s=v.channels?.subscriber_count||0; return s>=100000&&s<1000000; }).length,
+    large:  allVideos.filter(v => (v.channels?.subscriber_count||0) >= 1000000).length,
+    medianOutlier,
+  };
+
+  allVideos.forEach(v => renderedVideos.set(v.video_id, v));
+
+  // --- render preview ---
+  const weekLabel = new Date(Date.now() - 7 * 86400000)
+    .toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+  const topRows = allVideos.slice(0, 20).map(v => {
+    const subs = v.channels?.subscriber_count || 0;
+    const isSmall = subs > 0 && subs < 300000;
+    const velHtml = v.vel7d != null
+      ? `<div class="radar-vel">+${fmt(v.vel7d)}</div>`
+      : `<div class="radar-vel no-data">—</div>`;
+    return `
+      <a class="radar-row" href="https://youtube.com/watch?v=${encodeURIComponent(v.video_id)}" target="_blank" rel="noopener">
+        <img class="radar-thumb" src="${escapeHtml(v.thumbnail_url)}" alt="" loading="lazy"/>
+        <div class="radar-info">
+          <div class="radar-title">${escapeHtml(v.title)}</div>
+          <div class="radar-meta">${escapeHtml(v.channels?.title||"—")} · ${ago(v.published_at)} · ${fmt(subs)} subs${isSmall?" 🟢":""}</div>
+        </div>
+        <div class="radar-metrics">
+          ${velHtml}
+          <div class="radar-outlier">${(v.outlier_score||0).toFixed(1)}x</div>
+          <div>${fmt(v.vph||0)}/h</div>
+        </div>
+      </a>`;
+  }).join("");
+
+  content.innerHTML = `
+    <div class="radar-head">
+      <div class="stats">📝 Week of ${weekLabel} · ${allVideos.length} videos · median outlier ${medianOutlier}x</div>
+      <button class="copy-btn" id="copyReportBtn">📋 Copy Report Prompt</button>
+    </div>
+
+    <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;">
+      <div style="background:#161616;border:1px solid #1f1f1f;border-radius:10px;padding:12px 18px;font-size:13px;">
+        🟢 Small <strong style="color:#e5e5e5">${stats.small}</strong>
+      </div>
+      <div style="background:#161616;border:1px solid #1f1f1f;border-radius:10px;padding:12px 18px;font-size:13px;">
+        🟡 Mid <strong style="color:#e5e5e5">${stats.mid}</strong>
+      </div>
+      <div style="background:#161616;border:1px solid #1f1f1f;border-radius:10px;padding:12px 18px;font-size:13px;">
+        ⚫ Large <strong style="color:#e5e5e5">${stats.large}</strong>
+      </div>
+      <div style="background:#161616;border:1px solid #1f1f1f;border-radius:10px;padding:12px 18px;font-size:13px;">
+        ⚡ Vel. data <strong style="color:#e5e5e5">${velMap7.size}</strong> videos
+      </div>
+    </div>
+
+    <div class="radar-section-title">🏆 Top Outliers This Week <span>${allVideos.length} videos</span></div>
+    <div>${topRows}</div>
+    ${allVideos.length > 20 ? `<div class="stats" style="margin-top:8px">+ ${allVideos.length - 20} more videos included in prompt</div>` : ""}`;
+
+  $("copyReportBtn").addEventListener("click", () => {
+    const prompt = buildWeeklyPrompt(allVideos, accelVideos, clusters || [], insights, stats);
+    navigator.clipboard.writeText(prompt).then(() => {
+      const btn = $("copyReportBtn");
+      btn.textContent = "✓ Copied!";
+      btn.classList.add("copied");
+      setTimeout(() => { btn.textContent = "📋 Copy Report Prompt"; btn.classList.remove("copied"); }, 2000);
+    });
+  });
+}
+
+/* ---------- Daily Radar ---------- */
+let radarWindow = 48; // hours
+
+function buildRadarPrompt(fresh, accel, clusters) {
+  const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  const fmtVideo = (v, vel) => {
+    const subs = v.channels?.subscriber_count || 0;
+    const size = subs < 100000 ? "small" : subs < 1000000 ? "mid" : "large";
+    const velLine = vel != null ? `velocity_24h: +${fmt(vel)} views | ` : "";
+    return `"${v.title}"
+  Channel: ${v.channels?.title || "—"} | Subs: ${fmt(subs)} (${size})
+  Outlier: ${(v.outlier_score || 0).toFixed(1)}x | ${velLine}VPH: ${fmt(v.vph || 0)}/h | Views: ${fmt(v.view_count || 0)} | Published: ${ago(v.published_at)}`;
+  };
+
+  const clusterCtx = clusters.length
+    ? clusters.map(c => `• ${c.label}: ${c.description || "no description"}`).join("\n")
+    : "No cluster data available yet.";
+
+  const accelSection = accel.length
+    ? accel.map(v => fmtVideo(v, v.velocity_24h)).join("\n\n")
+    : "No velocity data yet (first snapshot just captured — check again in 24h).";
+
+  const freshSection = fresh.length
+    ? fresh.map(v => fmtVideo(v, null)).join("\n\n")
+    : "No fresh outliers in this window.";
+
+  return `DAILY RADAR BRIEF — ${today}
+Analysis window: last ${radarWindow}h
+
+${"═".repeat(60)}
+NARRATIVE CONTEXT (active weekly themes from topic_clusters)
+${"═".repeat(60)}
+${clusterCtx}
+
+${"═".repeat(60)}
+ACCELERATING VIDEOS (ranked by velocity_24h — views gained in last ${radarWindow}h)
+${"═".repeat(60)}
+${accelSection}
+
+${"═".repeat(60)}
+FRESH OUTLIERS (published in last ${radarWindow}h, ranked by outlier score)
+${"═".repeat(60)}
+${freshSection}
+
+${"═".repeat(60)}
+YOUR TASK
+${"═".repeat(60)}
+You are a Finance YouTube attention intelligence analyst. Your job is to help a finance content creator understand what is getting attention RIGHT NOW.
+
+Generate a Daily Radar briefing with these sections:
+
+1. STRONGEST SIGNALS (3–5 bullets)
+   What themes or videos are getting the most attention today? Lead with the velocity data.
+
+2. ACCELERATING NOW
+   Which videos are gaining momentum faster than expected? Why might that be?
+
+3. NARRATIVE MAPPING
+   Map each significant video to a narrative theme from the context above — or flag a NEW emerging theme not in the cluster list. Use title analysis and channel context, not database tags.
+
+4. SMALL CHANNEL BREAKOUTS
+   Flag any channel under 300K subs punching above its weight. Why is this interesting?
+
+5. TITLE PATTERNS
+   Any repeating formulas or hooks among today's outliers? Extract the pattern, not just the example.
+
+6. WEEKLY REPORT CANDIDATES
+   Pick 2–3 videos with the strongest evidence value for a weekly narrative. Briefly explain why.
+
+7. WHAT TO SKIP
+   Any videos that look noisy, low-signal, or too generic to be worth including?
+
+STRICT RULES:
+— No financial advice, price predictions, or investment recommendations
+— No claims about whether a stock/asset/market will go up or down
+— Mark low-confidence observations: "(low confidence — limited sample)"
+— Be specific: cite video titles and channel names
+— Keep total response under 600 words
+— Write for a finance creator deciding what to film next week, not for an investor`;
+}
+
+/* ---------- Daily analysis checklist ---------- */
+const RADAR_CHECKLIST = [
+  { title: "Start with Accelerating, not all-time outliers",
+    hint:  "Velocity beats lifetime score for what's hot right now." },
+  { title: "Kill noise with absolute scale",
+    hint:  "High outlier on a tiny view count is a baseline artifact — ignore the multiplier." },
+  { title: "Group by narrative, count distinct channels",
+    hint:  "A reportable narrative needs ≥3 independent channels — one creator's bet isn't a wave." },
+  { title: "Find small-channel breakouts inside live themes",
+    hint:  "Themes where <100K channels punch through = opportunity windows for your clients." },
+  { title: "Extract the title or format pattern",
+    hint:  "What's the repeatable hook a creator can copy? Pattern > example." },
+  { title: "Sanity-check with EQS",
+    hint:  "Low EQS = thumbnail-driven attention, won't repeat. High EQS = durable interest." },
+  { title: "Save to library with status + evidence note",
+    hint:  "Today's saves become next week's report. Tag it, note why." },
+];
+
+function dcKey() {
+  return `tm_radar_checklist_${new Date().toLocaleDateString("en-CA")}`;
+}
+function dcLoad()  { try { return JSON.parse(localStorage.getItem(dcKey()) || "[]"); } catch { return []; } }
+function dcSave(s) { localStorage.setItem(dcKey(), JSON.stringify(s)); }
+
+function renderChecklistHTML() {
+  const state = dcLoad();
+  const total = RADAR_CHECKLIST.length;
+  const done  = state.filter(Boolean).length;
+  const steps = RADAR_CHECKLIST.map((s, i) => `
+    <div class="dc-step ${state[i] ? "done" : ""}" data-step="${i}">
+      <div class="dc-check">✓</div>
+      <div class="dc-body">
+        <div class="dc-text">${i+1}. ${s.title}</div>
+        <div class="dc-hint">${s.hint}</div>
+      </div>
+    </div>`).join("");
+  return `
+    <div class="daily-checklist ${done === total ? "complete" : ""}" id="dailyChecklist">
+      <div class="dc-head">
+        <div class="dc-title">🧭 Daily analysis pass</div>
+        <div class="dc-progress" id="dcProgress">${done}/${total}</div>
+        <div class="dc-spacer"></div>
+        <button class="dc-btn" id="dcReset">Reset</button>
+      </div>
+      <div class="dc-list" id="dcList">${steps}</div>
+    </div>`;
+}
+
+function wireChecklist() {
+  const list = $("dcList");
+  if (!list) return;
+  const total = RADAR_CHECKLIST.length;
+  list.addEventListener("click", e => {
+    const stepEl = e.target.closest(".dc-step");
+    if (!stepEl) return;
+    const idx = +stepEl.dataset.step;
+    const state = dcLoad();
+    state[idx] = !state[idx];
+    dcSave(state);
+    stepEl.classList.toggle("done", !!state[idx]);
+    const done = state.filter(Boolean).length;
+    $("dcProgress").textContent = `${done}/${total}`;
+    $("dailyChecklist").classList.toggle("complete", done === total);
+  });
+  $("dcReset").addEventListener("click", () => {
+    dcSave([]);
+    document.querySelectorAll(".dc-step").forEach(el => el.classList.remove("done"));
+    $("dcProgress").textContent = `0/${total}`;
+    $("dailyChecklist").classList.remove("complete");
+  });
+}
+
+async function loadRadar() {
+  const content = $("radarContent");
+  content.innerHTML = '<div class="loading">Building radar...</div>';
+
+  const since48 = new Date(Date.now() - 48 * 3600000).toISOString();
+  const since7d  = new Date(Date.now() -  7 * 86400000).toISOString();
+
+  // --- velocity from video_history ---
+  const velMap = new Map(); // video_id → velocity_24h
+  try {
+    const { data: history } = await supabase
+      .from("video_history")
+      .select("video_id, view_count, captured_at")
+      .gte("captured_at", since48)
+      .order("captured_at", { ascending: true });
+
+    if (history?.length) {
+      const byVid = new Map();
+      for (const row of history) {
+        if (!byVid.has(row.video_id)) byVid.set(row.video_id, { first: row, last: row });
+        else byVid.get(row.video_id).last = row;
+      }
+      for (const [id, { first, last }] of byVid) {
+        if (first.captured_at !== last.captured_at) {
+          const delta = last.view_count - first.view_count;
+          if (delta > 0) velMap.set(id, delta);
+        }
+      }
+    }
+  } catch { /* non-fatal */ }
+
+  // --- accelerating videos (top velocity, up to 7d old) ---
+  let accelVideos = [];
+  if (velMap.size > 0) {
+    const topIds = [...velMap.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 25)
+      .map(([id]) => id);
+    const { data: av } = await supabase
+      .from("videos")
+      .select("*, channels(title, subscriber_count)")
+      .in("video_id", topIds)
+      .gte("published_at", since7d)
+      .gte("duration_seconds", 60);
+    accelVideos = (av || [])
+      .map(v => ({ ...v, velocity_24h: velMap.get(v.video_id) || 0 }))
+      .sort((a, b) => b.velocity_24h - a.velocity_24h);
+  }
+
+  // --- fresh outliers (< radarWindow h old) ---
+  const sinceWindow = new Date(Date.now() - radarWindow * 3600000).toISOString();
+  const { data: freshVideos } = await supabase
+    .from("videos")
+    .select("*, channels(title, subscriber_count)")
+    .gte("published_at", sinceWindow)
+    .gte("duration_seconds", 60)
+    .order("outlier_score", { ascending: false })
+    .limit(30);
+
+  // --- topic cluster context (latest week) ---
+  const { data: clusters } = await supabase
+    .from("topic_clusters")
+    .select("label, description, video_count")
+    .order("week_start", { ascending: false })
+    .order("video_count",  { ascending: false })
+    .limit(12);
+
+  // register for save-btn
+  [...(accelVideos), ...(freshVideos || [])].forEach(v => renderedVideos.set(v.video_id, v));
+
+  // --- render ---
+  const hasVel   = velMap.size > 0;
+  const hasFresh = (freshVideos || []).length > 0;
+  const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+  function radarRow(v, vel) {
+    const subs = v.channels?.subscriber_count || 0;
+    const isSmall = subs > 0 && subs < 300000;
+    const velHtml = vel != null
+      ? `<div class="radar-vel">+${fmt(vel)}</div>`
+      : `<div class="radar-vel no-data">no vel.</div>`;
+    return `
+      <a class="radar-row" href="https://youtube.com/watch?v=${encodeURIComponent(v.video_id)}" target="_blank" rel="noopener">
+        <img class="radar-thumb" src="${escapeHtml(v.thumbnail_url)}" alt="" loading="lazy"/>
+        <div class="radar-info">
+          <div class="radar-title">${escapeHtml(v.title)}</div>
+          <div class="radar-meta">${escapeHtml(v.channels?.title || "—")} · ${ago(v.published_at)} · ${fmt(subs)} subs${isSmall ? " 🟢" : ""}</div>
+        </div>
+        <div class="radar-metrics">
+          ${velHtml}
+          <div class="radar-outlier">${(v.outlier_score || 0).toFixed(1)}x</div>
+          <div>${fmt(v.vph || 0)}/h</div>
+        </div>
+      </a>`;
+  }
+
+  const accelHtml = accelVideos.length
+    ? accelVideos.map(v => radarRow(v, v.velocity_24h)).join("")
+    : `<div class="empty" style="padding:24px 0">${hasVel ? "No accelerating videos found." : "No velocity data yet — baseline captured, check again in 24h."}</div>`;
+
+  const freshHtml = (freshVideos || []).length
+    ? freshVideos.map(v => radarRow(v, velMap.get(v.video_id) ?? null)).join("")
+    : `<div class="empty" style="padding:24px 0">No new outliers in the last ${radarWindow}h.</div>`;
+
+  content.innerHTML = `
+    ${renderChecklistHTML()}
+    <div class="radar-head">
+      <div class="stats">📡 Daily Radar · ${today}</div>
+      <div class="vel-window">
+        <button class="date-tab ${radarWindow===24?"active":""}" data-rwin="24">24h</button>
+        <button class="date-tab ${radarWindow===48?"active":""}" data-rwin="48">48h</button>
+      </div>
+      <button class="copy-btn" id="copyRadarBtn">📋 Copy Prompt</button>
+    </div>
+
+    <div class="radar-section-title">⚡ Accelerating <span>${accelVideos.length} videos</span></div>
+    <div id="radarAccel">${accelHtml}</div>
+
+    <div class="radar-section-title">🆕 Fresh Outliers <span>${(freshVideos||[]).length} videos</span></div>
+    <div id="radarFresh">${freshHtml}</div>`;
+
+  wireChecklist();
+
+  // copy prompt
+  $("copyRadarBtn").addEventListener("click", () => {
+    const prompt = buildRadarPrompt(freshVideos || [], accelVideos, clusters || []);
+    navigator.clipboard.writeText(prompt).then(() => {
+      const btn = $("copyRadarBtn");
+      btn.textContent = "✓ Copied!";
+      btn.classList.add("copied");
+      setTimeout(() => { btn.textContent = "📋 Copy Prompt"; btn.classList.remove("copied"); }, 2000);
+    });
+  });
+
+  // window switch
+  document.querySelectorAll("[data-rwin]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      radarWindow = parseInt(btn.dataset.rwin);
+      loadRadar();
+    });
+  });
+}
+
+/* ---------- Velocity ---------- */
+let velWindow = 48; // hours of history to look at
+
+async function loadVelocity() {
+  const content = $("velocityContent");
+  content.innerHTML = skeletonHTML(12);
+
+  const since = new Date(Date.now() - velWindow * 3600000).toISOString();
+
+  const { data: history, error: hErr } = await supabase
+    .from("video_history")
+    .select("video_id, view_count, vph, captured_at")
+    .gte("captured_at", since)
+    .order("captured_at", { ascending: true });
+
+  if (hErr) {
+    content.innerHTML = `<div class="empty">Error: ${hErr.message}</div>`;
+    return;
+  }
+
+  if (!history || history.length === 0) {
+    content.innerHTML = `
+      <div class="vel-waiting">
+        <div class="vel-waiting-icon">⏳</div>
+        <h3>Waiting for first snapshot</h3>
+        <p>Run the cron job once to capture a baseline. Velocity data will appear after the second run (~24h later).</p>
+      </div>`;
+    return;
+  }
+
+  // group by video_id → first & last snapshot
+  const byVideo = new Map();
+  for (const row of history) {
+    if (!byVideo.has(row.video_id)) {
+      byVideo.set(row.video_id, { first: row, last: row });
+    } else {
+      byVideo.get(row.video_id).last = row;
+    }
+  }
+
+  // compute deltas — only videos with 2+ snapshots
+  const deltas = [];
+  for (const [video_id, { first, last }] of byVideo) {
+    if (first.captured_at === last.captured_at) continue;
+    const delta = last.view_count - first.view_count;
+    if (delta <= 0) continue;
+    const growthPct = first.view_count > 0 ? (delta / first.view_count) * 100 : 0;
+    deltas.push({ video_id, delta, growthPct, vph: last.vph, view_count: last.view_count });
+  }
+
+  if (deltas.length === 0) {
+    content.innerHTML = `
+      <div class="vel-waiting">
+        <div class="vel-waiting-icon">📡</div>
+        <h3>Baseline captured</h3>
+        <p>First snapshot is in. Velocity data will appear after the next cron run (~24h). Come back tomorrow.</p>
+      </div>`;
+    return;
+  }
+
+  // top 60 by absolute delta
+  deltas.sort((a, b) => b.delta - a.delta);
+  const top = deltas.slice(0, 60);
+  const topIds = top.map(d => d.video_id);
+
+  const { data: videos, error: vErr } = await supabase
+    .from("videos")
+    .select("*, channels(title, subscriber_count)")
+    .in("video_id", topIds);
+
+  if (vErr) {
+    content.innerHTML = `<div class="empty">Error loading video details: ${vErr.message}</div>`;
+    return;
+  }
+
+  const videoMap = new Map((videos || []).map(v => [v.video_id, v]));
+  top.forEach(d => { if (videoMap.has(d.video_id)) videoMap.get(d.video_id)._vel = d; });
+
+  const sizeFilter = () => {
+    const v = document.querySelector("#velSize")?.value || "all";
+    return v;
+  };
+
+  function renderVelGrid(sizeVal) {
+    const cards = top
+      .filter(d => {
+        if (sizeVal === "all") return true;
+        const v = videoMap.get(d.video_id);
+        if (!v) return false;
+        return sizeTag(v.channels?.subscriber_count || 0) === sizeVal;
+      })
+      .map(d => {
+        const v = videoMap.get(d.video_id);
+        if (!v) return "";
+        const inLib = isInLibrary(v.video_id);
+        const tag = sizeTag(v.channels?.subscriber_count || 0);
+        renderedVideos.set(v.video_id, v);
+        return `
+        <a class="card" href="https://youtube.com/watch?v=${encodeURIComponent(v.video_id)}" target="_blank" rel="noopener" data-id="${escapeHtml(v.video_id)}">
+          <div class="thumb">
+            <img src="${escapeHtml(v.thumbnail_url)}" alt="" loading="lazy"/>
+            <div class="vel-delta-badge">+${fmt(d.delta)}</div>
+            <div class="size-tag ${tag}">${fmt(v.channels?.subscriber_count || 0)} subs</div>
+            <button class="save-btn ${inLib ? "saved" : ""}" data-id="${escapeHtml(v.video_id)}" title="${inLib ? "Remove from library" : "Add to library"}">${bookmarkSvg()}</button>
+            <div class="score-badge ${sigClass(v.outlier_score||0)}">${(v.outlier_score || 0).toFixed(1)}x</div>
+          </div>
+          <div class="body">
+            <div class="title">${escapeHtml(v.title)}</div>
+            <div class="channel">${escapeHtml(v.channels?.title || "—")} · ${ago(v.published_at)}</div>
+            <div class="metrics">
+              <div class="m-primary">+Views<span>${fmt(d.delta)}</span></div>
+              <div class="m-secondary">Growth<span>${d.growthPct.toFixed(1)}%</span></div>
+              <div class="m-secondary">VPH<span>${fmt(d.vph || 0)}/h</span></div>
+              <div class="m-dim">Total<span>${fmt(d.view_count)}</span></div>
+            </div>
+          </div>
+        </a>`;
+      }).join("");
+
+    $("velGrid").innerHTML = cards || '<div class="empty">No videos match filter</div>';
+    $("velStats").textContent = `${top.length} growing videos · last ${velWindow}h`;
+  }
+
+  content.innerHTML = `
+    <div class="vel-head">
+      <div class="stats" id="velStats"></div>
+      <div class="vel-window">
+        <button class="date-tab ${velWindow === 24 ? "active" : ""}" data-velwin="24">24h</button>
+        <button class="date-tab ${velWindow === 48 ? "active" : ""}" data-velwin="48">48h</button>
+        <button class="date-tab ${velWindow === 168 ? "active" : ""}" data-velwin="168">7d</button>
+      </div>
+      <select id="velSize" style="background:#161616;border:1px solid #2a2a2a;color:#e5e5e5;padding:7px 12px;border-radius:8px;font-size:13px;outline:none;">
+        <option value="all">All sizes</option>
+        <option value="small">Small &lt;100K</option>
+        <option value="mid">Mid 100K–1M</option>
+        <option value="large">Large &gt;1M</option>
+      </select>
+    </div>
+    <div class="grid" id="velGrid"></div>`;
+
+  renderVelGrid("all");
+
+  $("velSize").addEventListener("change", e => renderVelGrid(e.target.value));
+
+  document.querySelectorAll("[data-velwin]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("[data-velwin]").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      velWindow = parseInt(btn.dataset.velwin);
+      loadVelocity();
+    });
+  });
+}
+
+/* ---------- AI Insights (аномалии недели) ---------- */
+async function loadInsights() {
+  const panel = $("insightsPanel");
+  if (!panel) return;
+  try {
+    const { data } = await supabase
+      .from("weekly_insights")
+      .select("week_start, insights")
+      .order("week_start", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!data?.insights?.length) return;
+    const weekLabel = new Date(data.week_start + "T00:00:00Z")
+      .toLocaleDateString(undefined, { month: "short", day: "numeric", timeZone: "UTC" });
+    const cards = data.insights.map(ins => `
+      <div class="insight-card">
+        <span class="insight-emoji">${ins.emoji || "💡"}</span>
+        <div class="insight-text">
+          <h5>${escapeHtml(ins.headline || "")}</h5>
+          <p>${escapeHtml(ins.detail || "")}</p>
+        </div>
+      </div>`).join("");
+    panel.innerHTML = `
+      <div class="insights-panel">
+        <div class="insights-header">🤖 AI Insights · week of ${weekLabel}</div>
+        <div class="insight-cards">${cards}</div>
+      </div>`;
+  } catch {
+    // нет данных — молча пропускаем
+  }
+}
+
+/* ---------- Side Panel ---------- */
+let currentPanelId  = null;
+let notesDebounce   = null;
+
+function sigLabel(score) {
+  if (score >= 10) return { text: "Extreme breakout",  color: "#ef4444" };
+  if (score >= 5)  return { text: "Strong outlier",    color: "#f97316" };
+  if (score >= 3)  return { text: "Moderate outlier",  color: "#8b5cf6" };
+  return             { text: "Weak signal",            color: "#555"    };
+}
+
+function generateWhyItMatters(v) {
+  const score  = v.outlier_score || 0;
+  const subs   = v.channels?.subscriber_count || 0;
+  const views  = v.view_count || 0;
+  const vph    = v.vph || 0;
+  const ageH   = (Date.now() - new Date(v.published_at)) / 3600000;
+  const items  = [];
+
+  if (score >= 10)     items.push(`🔴 Extreme breakout — ${score.toFixed(1)}x above channel baseline. Very rare signal.`);
+  else if (score >= 5) items.push(`🟠 Strong outlier — ${score.toFixed(1)}x above channel's expected performance.`);
+  else                 items.push(`🟡 Moderate outlier — ${score.toFixed(1)}x above channel's expected performance.`);
+
+  if (subs > 0 && subs < 200000 && score >= 4)
+    items.push(`🟢 Small channel breakout — ${fmt(subs)} subs punching well above their tier.`);
+
+  if (ageH < 72 && vph > 300)
+    items.push(`⚡ Fast start — ${fmt(vph)}/h VPH in first ${Math.round(ageH)}h. Strong early momentum.`);
+  else if (ageH < 168 && views > 50000)
+    items.push(`📈 ${fmt(views)} views in under a week — healthy early traction.`);
+
+  if (subs > 10000 && views / subs > 0.3)
+    items.push(`Reached ${((views / subs) * 100).toFixed(0)}% of subscriber base — high penetration rate.`);
+
+  const t = " " + (v.title || "").toLowerCase() + " ";
+  for (const g of SIGNAL_GROUPS) {
+    if (g.keys.some(k => t.includes(k))) {
+      items.push(`📌 Narrative theme: ${g.label}`);
+      break;
+    }
+  }
+  return items;
+}
+
+function buildEvidenceCopy(v, bullets, notes) {
+  const subs   = v.channels?.subscriber_count || 0;
+  const score  = (v.outlier_score || 0).toFixed(1);
+  const views  = fmt(v.view_count || 0);
+  const vph    = fmt(v.vph || 0);
+  const ageH   = (Date.now() - new Date(v.published_at)) / 3600000;
+  const ageStr = ageH < 48  ? `${Math.round(ageH)}h old`
+               : ageH < 168 ? `${Math.round(ageH/24)}d old`
+               : `${Math.round(ageH/168)}w old`;
+  const url    = `https://youtube.com/watch?v=${v.video_id}`;
+  const clean  = b => b.replace(/^[\p{Emoji}\s]+/u, "").trim();
+  const whyLine = bullets.map(clean).join("; ");
+  let text = `${v.title}\n`;
+  text += `${v.channels?.title || "—"} · ${fmt(subs)} subs · ${views} views · ${score}x outlier · ${vph}/h VPH · ${ageStr}\n`;
+  text += `Why it matters: ${whyLine}\n`;
+  text += url;
+  if (notes && notes.trim()) text += `\nNotes: ${notes.trim()}`;
+  return text;
+}
+
+function closePanel() {
+  currentPanelId = null;
+  panelEl.classList.remove("open");
+}
+
+async function openPanel(v) {
+  currentPanelId = v.video_id;
+  panelEl.classList.add("open");
+  panelBody.innerHTML = '<div class="loading" style="padding:40px 20px">Loading...</div>';
+
+  const { data: cand } = await supabase
+    .from("report_candidates")
+    .select("status, notes")
+    .eq("video_id", v.video_id)
+    .maybeSingle();
+
+  const status  = cand?.status || null;
+  const notes   = cand?.notes  || "";
+  const subs    = v.channels?.subscriber_count || 0;
+  const sig     = sigLabel(v.outlier_score || 0);
+  const bullets = generateWhyItMatters(v);
+
+  const statusCfg = [
+    { key: "watch_later",    cls: "s-watch_later",    label: "👀 Watch Later"      },
+    { key: "candidate",      cls: "s-candidate",      label: "📋 Candidate"        },
+    { key: "evidence",       cls: "s-evidence",       label: "📊 Evidence"         },
+    { key: "title_pattern",  cls: "s-title_pattern",  label: "🏷️ Title Pattern"    },
+    { key: "small_breakout", cls: "s-small_breakout", label: "🚀 Small Breakout"   },
+    { key: "used_in_report", cls: "s-used_in_report",  label: "✅ Used in Report"   },
+    { key: "rejected",       cls: "s-rejected",       label: "❌ Rejected"         },
+  ];
+
+  panelBody.innerHTML = `
+    <img src="${escapeHtml(v.thumbnail_url)}" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block;"/>
+
+    <div class="panel-section">
+      <div class="panel-title">${escapeHtml(v.title)}</div>
+      <div class="panel-meta">${escapeHtml(v.channels?.title || "—")} · ${fmt(subs)} subs · ${ago(v.published_at)}</div>
+      <a href="https://youtube.com/watch?v=${encodeURIComponent(v.video_id)}" target="_blank" rel="noopener" class="panel-yt-link">▶ Watch on YouTube</a>
+    </div>
+
+    <div class="panel-section panel-metrics-grid">
+      <div class="panel-metric primary">
+        <div class="pm-label">Outlier Score</div>
+        <div class="pm-value" style="color:${sig.color}">${(v.outlier_score || 0).toFixed(1)}x</div>
+        <div class="pm-sub">${sig.text}</div>
+      </div>
+      <div class="panel-metric">
+        <div class="pm-label">Views</div>
+        <div class="pm-value">${fmt(v.view_count || 0)}</div>
+      </div>
+      <div class="panel-metric">
+        <div class="pm-label">VPH</div>
+        <div class="pm-value">${fmt(v.vph || 0)}/h</div>
+      </div>
+      <div class="panel-metric">
+        <div class="pm-label">EQS</div>
+        <div class="pm-value">${(v.eqs || 0).toFixed(2)}</div>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-title">
+        Why it matters
+        <button class="copy-evidence-btn" id="copyEvidenceBtn">Copy evidence</button>
+      </div>
+      <ul class="panel-bullets">
+        ${bullets.map(b => `<li>${escapeHtml(b)}</li>`).join("")}
+      </ul>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-title">Report status</div>
+      <div class="panel-status-sublabel">Save type</div>
+      <div class="panel-status-row" style="margin-bottom:10px">
+        ${statusCfg.filter(s => !["used_in_report","rejected"].includes(s.key)).map(s => `
+          <button class="status-btn ${s.cls} ${status === s.key ? "active" : ""}" data-status="${s.key}">
+            ${s.label}
+          </button>`).join("")}
+      </div>
+      <div class="panel-status-sublabel">Final state</div>
+      <div class="panel-status-row">
+        ${statusCfg.filter(s => ["used_in_report","rejected"].includes(s.key)).map(s => `
+          <button class="status-btn ${s.cls} ${status === s.key ? "active" : ""}" data-status="${s.key}">
+            ${s.label}
+          </button>`).join("")}
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-title">Notes</div>
+      <textarea class="panel-notes" id="panelNotes" placeholder="Add analysis notes...">${escapeHtml(notes)}</textarea>
+      <div class="panel-saved-note" id="panelSavedNote"></div>
+    </div>`;
+
+  // status toggle
+  panelBody.querySelectorAll(".status-btn").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const newStatus = btn.dataset.status;
+      const isActive  = btn.classList.contains("active");
+      panelBody.querySelectorAll(".status-btn").forEach(b => b.classList.remove("active"));
+      if (!isActive) btn.classList.add("active");
+      if (isActive) {
+        // deactivate: delete row entirely so it's fully out of library
+        await supabase.from("report_candidates").delete().eq("video_id", v.video_id);
+        reportMap.delete(v.video_id);
+      } else {
+        await supabase.from("report_candidates").upsert(
+          { video_id: v.video_id, status: newStatus, updated_at: new Date().toISOString() },
+          { onConflict: "video_id" }
+        );
+        reportMap.set(v.video_id, newStatus);
+      }
+      updateBookmarkUI(v.video_id);
+    });
+  });
+
+  // copy evidence
+  $("copyEvidenceBtn").addEventListener("click", async () => {
+    const notesVal = $("panelNotes")?.value || "";
+    const text = buildEvidenceCopy(v, bullets, notesVal);
+    await navigator.clipboard.writeText(text);
+    const btn = $("copyEvidenceBtn");
+    btn.textContent = "Copied ✓";
+    btn.classList.add("copied");
+    setTimeout(() => { btn.textContent = "Copy evidence"; btn.classList.remove("copied"); }, 2000);
+  });
+
+  // notes — debounced save
+  $("panelNotes").addEventListener("input", e => {
+    clearTimeout(notesDebounce);
+    $("panelSavedNote").textContent = "Saving...";
+    notesDebounce = setTimeout(async () => {
+      await supabase.from("report_candidates").upsert(
+        { video_id: v.video_id, notes: e.target.value, updated_at: new Date().toISOString() },
+        { onConflict: "video_id" }
+      );
+      $("panelSavedNote").textContent = "Saved ✓";
+      setTimeout(() => { if ($("panelSavedNote")) $("panelSavedNote").textContent = ""; }, 2000);
+    }, 900);
+  });
+}
+
+// panel close button
+$("panelClose").addEventListener("click", closePanel);
+
+// Escape key
+document.addEventListener("keydown", e => { if (e.key === "Escape") closePanel(); });
+
+// card click → open panel (save-btn handled separately)
+document.addEventListener("click", e => {
+  if (e.target.closest(".save-btn")) return;
+  const card = e.target.closest(".card[data-id]");
+  if (!card) return;
+  e.preventDefault();
+  const id    = card.dataset.id;
+  const video = renderedVideos.get(id);
+  if (!video) return;
+  if (currentPanelId === id && panelEl.classList.contains("open")) {
+    closePanel();
+  } else {
+    openPanel(video);
+  }
+});
+
+/* ---------- page switching ---------- */
+function switchPage(pageId) {
+  if (!PAGES[pageId]) return;
+  currentPage = pageId;
+  const cfg = PAGES[pageId];
+
+  navItems.forEach(n => n.classList.toggle("active", n.dataset.page === pageId));
+  pageTitle.textContent = cfg.title;
+  filtersEl.style.display = cfg.showFilters ? "" : "none";
+
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+
+  if (pageId === "radar") {
+    $("page-radar").classList.add("active");
+    loadRadar();
+  } else if (pageId === "report") {
+    $("page-report").classList.add("active");
+    loadWeeklyReport();
+  } else if (pageId === "saved") {
+    $("page-saved").classList.add("active");
+    loadReportLibrary();
+  } else if (pageId === "insights") {
+    $("page-insights").classList.add("active");
+    loadInsights();
+  } else if (pageId === "topics") {
+    $("page-topics").classList.add("active");
+    loadTopics();
+  } else if (pageId === "velocity") {
+    $("page-velocity").classList.add("active");
+    loadVelocity();
+  } else if (pageId === "channels") {
+    $("page-channels").classList.add("active");
+    loadChannels();
+  } else {
+    // outliers / recent / eqs
+    $("page-videos").classList.add("active");
+    if (cfg.defaultSort) sortEl.value = cfg.defaultSort;
+    minViewsEl.value = cfg.defaultMinViews ?? "";
+    loadVideos();
+  }
+
+  sidebar.classList.remove("open");
+}
+
+/* ---------- event wiring ---------- */
+navItems.forEach(item => {
+  item.addEventListener("click", () => switchPage(item.dataset.page));
+});
+
+dayTabs.forEach(tab => {
+  tab.addEventListener("click", () => {
+    dayTabs.forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    activeDays = parseInt(tab.dataset.days);
+    loadVideos();
+  });
+});
+
+durTabs.forEach(tab => {
+  tab.addEventListener("click", () => {
+    activeDur = tab.dataset.dur;
+    localStorage.setItem("tm_dur_filter", activeDur);
+    durTabs.forEach(t =>
+      t.classList.toggle("active", t.dataset.dur === activeDur));
+    loadVideos();
+  });
+});
+
+resetBtn.addEventListener("click", () => {
+  const cfg = PAGES[currentPage] || {};
+  sizeEl.value = "all";
+  sortEl.value = cfg.defaultSort || "outlier_score";
+  minOutlierEl.value = "";
+  minViewsEl.value = cfg.defaultMinViews ?? "";
+  minEqsEl.value = "";
+  searchEl.value = "";
+  activeDays = 30;
+  dayTabs.forEach(t => t.classList.remove("active"));
+  document.querySelector('[data-days="30"]').classList.add("active");
+  loadVideos();
+});
+
+sizeEl.addEventListener("change", render);
+
+let searchTimeout;
+searchEl.addEventListener("input", () => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(loadVideos, 400);
+});
+
+[sortEl, minOutlierEl, minViewsEl, minEqsEl].forEach(el =>
+  el.addEventListener("change", loadVideos));
+
+// Save button delegation
+document.addEventListener("click", async e => {
+  const btn = e.target.closest(".save-btn");
+  if (!btn) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const id = btn.dataset.id;
+  if (!id) return;
+  await toggleBookmark(id);
+});
+
+// Hamburger
+$("hamburger").addEventListener("click", () => sidebar.classList.toggle("open"));
+
+// Initial load — wait for reportMap so bookmark states render correctly on first paint
+loadReportMap().then(loadVideos);
+</script>
+</body>
+</html>
