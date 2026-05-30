@@ -414,6 +414,7 @@
   .signal-score { color: #555; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
   .signal-breakout .signal-label { color: #22c55e; }
   .signal-breakout .signal-count { border-color: rgba(34,197,94,.3); color: #22c55e; background: rgba(34,197,94,.07); }
+  .signal-wave .signal-count { border-color: rgba(139,92,246,.4); color: #c4b5fd; background: rgba(139,92,246,.1); }
 
   /* Daily analysis checklist */
   .daily-checklist {
@@ -937,7 +938,7 @@ function narrativeTag(v) {
 
 function computeSignals(videos) {
   const THRESHOLD = 2.0;
-  const groups = Object.fromEntries(SIGNAL_GROUPS.map(g => [g.id, { ...g, vids: [], total: 0 }]));
+  const groups = Object.fromEntries(SIGNAL_GROUPS.map(g => [g.id, { ...g, vids: [], total: 0, channelSet: new Set() }]));
 
   for (const v of videos) {
     const score = v.outlier_score || 0;
@@ -947,6 +948,7 @@ function computeSignals(videos) {
       if (g.keys.some(k => t.includes(k))) {
         groups[g.id].vids.push(v);
         groups[g.id].total += score;
+        groups[g.id].channelSet.add(v.channel_id || v.channels?.title || v.video_id);
         break; // first matching group wins (ordered specific → broad)
       }
     }
@@ -957,9 +959,11 @@ function computeSignals(videos) {
     .map(g => ({
       label:    g.label,
       count:    g.vids.length,
+      channels: g.channelSet.size,
       avgScore: g.total / g.vids.length,
       maxScore: Math.max(...g.vids.map(v => v.outlier_score || 0)),
-      weight:   g.vids.length * (g.total / g.vids.length),
+      // distinct channels validate a narrative (≥3 = a real wave, not one creator's bet)
+      weight:   g.channelSet.size * (g.total / g.vids.length),
     }))
     .sort((a, b) => b.weight - a.weight)
     .slice(0, 3);
@@ -980,13 +984,16 @@ function renderSignals({ ranked, breakout }) {
 
   const icon = s => s >= 7 ? "🔴" : s >= 4 ? "🟠" : "🟡";
 
-  const rows = ranked.map(s => `
-    <div class="signal-item">
+  const rows = ranked.map(s => {
+    const isWave = s.channels >= 3;
+    return `
+    <div class="signal-item${isWave ? " signal-wave" : ""}" title="${isWave ? "Wave: ≥3 independent channels — narrative validated" : "Single/few channels — not yet a wave"}">
       <span class="signal-icon">${icon(s.avgScore)}</span>
       <span class="signal-label">${escapeHtml(s.label)}</span>
-      <span class="signal-count">${s.count} outlier${s.count > 1 ? "s" : ""}</span>
+      <span class="signal-count">${s.count} outlier${s.count > 1 ? "s" : ""} · ${s.channels} channel${s.channels > 1 ? "s" : ""}${isWave ? " 🌊" : ""}</span>
       <span class="signal-score">avg ${s.avgScore.toFixed(1)}x · max ${s.maxScore.toFixed(1)}x</span>
-    </div>`).join("");
+    </div>`;
+  }).join("");
 
   const bRow = breakout ? `
     <div class="signal-item signal-breakout">
@@ -1603,7 +1610,7 @@ async function loadWeeklyReport() {
 /* ---------- Daily Radar ---------- */
 let radarWindow = 48; // hours
 
-function buildRadarPrompt(fresh, accel, clusters) {
+function buildRadarPrompt(fresh, accel, clusters, smallBreakouts = []) {
   const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   const fmtVideo = (v, vel) => {
     const subs = v.channels?.subscriber_count || 0;
@@ -1626,6 +1633,10 @@ function buildRadarPrompt(fresh, accel, clusters) {
     ? fresh.map(v => fmtVideo(v, null)).join("\n\n")
     : "No fresh outliers in this window.";
 
+  const smallSection = smallBreakouts.length
+    ? smallBreakouts.map(v => fmtVideo(v, v.velocity_24h)).join("\n\n")
+    : "No small-channel breakouts in the last 7d.";
+
   return `DAILY RADAR BRIEF — ${today}
 Analysis window: last ${radarWindow}h
 
@@ -1638,6 +1649,11 @@ ${"═".repeat(60)}
 ACCELERATING VIDEOS (ranked by velocity_24h — views gained in last ${radarWindow}h)
 ${"═".repeat(60)}
 ${accelSection}
+
+${"═".repeat(60)}
+SMALL-CHANNEL BREAKOUTS (<100K subs, outlier ≥ 4x, last 7d — opportunity windows)
+${"═".repeat(60)}
+${smallSection}
 
 ${"═".repeat(60)}
 FRESH OUTLIERS (published in last ${radarWindow}h, ranked by outlier score)
@@ -1812,6 +1828,21 @@ async function loadRadar() {
     .order("outlier_score", { ascending: false })
     .limit(30);
 
+  // --- small-channel breakouts (<100K subs, outlier ≥ 4x, last 7d) ---
+  // Opportunity windows: small channels punching above their tier inside live themes.
+  const { data: breakoutPool } = await supabase
+    .from("videos")
+    .select("*, channels(title, subscriber_count)")
+    .gte("published_at", since7d)
+    .gte("duration_seconds", 60)
+    .gte("outlier_score", 4)
+    .order("outlier_score", { ascending: false })
+    .limit(40);
+  const smallBreakouts = (breakoutPool || [])
+    .filter(v => { const s = v.channels?.subscriber_count || 0; return s > 0 && s < 100000; })
+    .slice(0, 12)
+    .map(v => ({ ...v, velocity_24h: velMap.get(v.video_id) ?? null }));
+
   // --- topic cluster context (latest week) ---
   const { data: clusters } = await supabase
     .from("topic_clusters")
@@ -1821,7 +1852,7 @@ async function loadRadar() {
     .limit(12);
 
   // register for save-btn
-  [...(accelVideos), ...(freshVideos || [])].forEach(v => renderedVideos.set(v.video_id, v));
+  [...(accelVideos), ...smallBreakouts, ...(freshVideos || [])].forEach(v => renderedVideos.set(v.video_id, v));
 
   // --- render ---
   const hasVel   = velMap.size > 0;
@@ -1853,6 +1884,10 @@ async function loadRadar() {
     ? accelVideos.map(v => radarRow(v, v.velocity_24h)).join("")
     : `<div class="empty" style="padding:24px 0">${hasVel ? "No accelerating videos found." : "No velocity data yet — baseline captured, check again in 24h."}</div>`;
 
+  const smallHtml = smallBreakouts.length
+    ? smallBreakouts.map(v => radarRow(v, v.velocity_24h)).join("")
+    : `<div class="empty" style="padding:24px 0">No small-channel breakouts in the last 7d.</div>`;
+
   const freshHtml = (freshVideos || []).length
     ? freshVideos.map(v => radarRow(v, velMap.get(v.video_id) ?? null)).join("")
     : `<div class="empty" style="padding:24px 0">No new outliers in the last ${radarWindow}h.</div>`;
@@ -1871,6 +1906,9 @@ async function loadRadar() {
     <div class="radar-section-title">⚡ Accelerating <span>${accelVideos.length} videos</span></div>
     <div id="radarAccel">${accelHtml}</div>
 
+    <div class="radar-section-title">🚀 Small Breakouts <span>${smallBreakouts.length} videos</span></div>
+    <div id="radarSmall">${smallHtml}</div>
+
     <div class="radar-section-title">🆕 Fresh Outliers <span>${(freshVideos||[]).length} videos</span></div>
     <div id="radarFresh">${freshHtml}</div>`;
 
@@ -1878,7 +1916,7 @@ async function loadRadar() {
 
   // copy prompt
   $("copyRadarBtn").addEventListener("click", () => {
-    const prompt = buildRadarPrompt(freshVideos || [], accelVideos, clusters || []);
+    const prompt = buildRadarPrompt(freshVideos || [], accelVideos, clusters || [], smallBreakouts);
     navigator.clipboard.writeText(prompt).then(() => {
       const btn = $("copyRadarBtn");
       btn.textContent = "✓ Copied!";
