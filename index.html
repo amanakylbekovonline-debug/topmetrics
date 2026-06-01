@@ -985,7 +985,7 @@ function cardHTML(v, opts = {}) {
         <div class="m-secondary">VPH<span>${fmt(v.vph||0)}/h</span></div>
         <div class="m-secondary">Views<span>${fmt(v.view_count||0)}</span></div>
         <div class="m-primary">Outlier<span>${score.toFixed(1)}x</span></div>
-        <div class="m-dim">EQS<span>${(v.eqs||0).toFixed(2)}</span></div>
+        <div class="m-dim" title="Engagement Quality Score — durability of attention. Low = thumbnail-driven spike that won't repeat. High = real, lasting interest.">EQS<span>${(v.eqs||0).toFixed(2)}</span></div>
       </div>
     </div>
   </a>`;
@@ -1562,28 +1562,11 @@ async function loadWeeklyReport() {
   const since7d  = new Date(Date.now() -  7 * 86400000).toISOString();
   const since8d  = new Date(Date.now() -  8 * 86400000).toISOString();
 
-  // --- velocity from video_history (7-day window) ---
+  // --- velocity from video_history (7-day window, server-side; avoids 1000-row cap) ---
   const velMap7 = new Map();
   try {
-    const { data: hist } = await supabase
-      .from("video_history")
-      .select("video_id, view_count, captured_at")
-      .gte("captured_at", since8d)
-      .order("captured_at", { ascending: true });
-
-    if (hist?.length) {
-      const byVid = new Map();
-      for (const row of hist) {
-        if (!byVid.has(row.video_id)) byVid.set(row.video_id, { first: row, last: row });
-        else byVid.get(row.video_id).last = row;
-      }
-      for (const [id, { first, last }] of byVid) {
-        if (first.captured_at !== last.captured_at) {
-          const delta = last.view_count - first.view_count;
-          if (delta > 0) velMap7.set(id, delta);
-        }
-      }
-    }
+    const { data: vel7 } = await supabase.rpc("velocity_deltas", { since: since8d });
+    (vel7 || []).forEach(r => velMap7.set(r.video_id, r.delta));
   } catch { /* non-fatal */ }
 
   // --- top outlier videos this week ---
@@ -1868,28 +1851,11 @@ async function loadRadar() {
   const since48 = new Date(Date.now() - 48 * 3600000).toISOString();
   const since7d  = new Date(Date.now() -  7 * 86400000).toISOString();
 
-  // --- velocity from video_history ---
-  const velMap = new Map(); // video_id → velocity_24h
+  // --- velocity from video_history (server-side; avoids the 1000-row response cap) ---
+  const velMap = new Map(); // video_id → views gained in window
   try {
-    const { data: history } = await supabase
-      .from("video_history")
-      .select("video_id, view_count, captured_at")
-      .gte("captured_at", since48)
-      .order("captured_at", { ascending: true });
-
-    if (history?.length) {
-      const byVid = new Map();
-      for (const row of history) {
-        if (!byVid.has(row.video_id)) byVid.set(row.video_id, { first: row, last: row });
-        else byVid.get(row.video_id).last = row;
-      }
-      for (const [id, { first, last }] of byVid) {
-        if (first.captured_at !== last.captured_at) {
-          const delta = last.view_count - first.view_count;
-          if (delta > 0) velMap.set(id, delta);
-        }
-      }
-    }
+    const { data: vel } = await supabase.rpc("velocity_deltas", { since: since48 });
+    (vel || []).forEach(r => velMap.set(r.video_id, r.delta));
   } catch { /* non-fatal */ }
 
   // --- accelerating videos (top velocity, up to 7d old) ---
@@ -1993,6 +1959,7 @@ async function loadRadar() {
         <button class="date-tab ${radarWindow===48?"active":""}" data-rwin="48">48h</button>
       </div>
       <button class="copy-btn" id="copyRadarBtn">📋 Copy Prompt</button>
+      <button class="ac-cancel" id="radarSaveReportBtn" style="margin-left:0" title="Open the Archive compose form, prefilled as a Daily report, to paste the generated briefing back">🗂️ Save as report</button>
     </div>
 
     <div class="radar-section-title">⚡ Accelerating <span>${accelVideos.length} videos</span></div>
@@ -2017,6 +1984,12 @@ async function loadRadar() {
     });
   });
 
+  // save as report → jump to Archive with the compose form prefilled as a Daily report
+  $("radarSaveReportBtn").addEventListener("click", () => {
+    pendingComposeType = "daily";
+    switchPage("archive");
+  });
+
   // window switch
   document.querySelectorAll("[data-rwin]").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -2035,58 +2008,33 @@ async function loadVelocity() {
 
   const since = new Date(Date.now() - velWindow * 3600000).toISOString();
 
-  const { data: history, error: hErr } = await supabase
-    .from("video_history")
-    .select("video_id, view_count, vph, captured_at")
-    .gte("captured_at", since)
-    .order("captured_at", { ascending: true });
+  // Server-side delta computation (RPC) — avoids the PostgREST 1000-row response cap.
+  const { data: velRows, error: hErr } = await supabase.rpc("velocity_deltas", { since });
 
   if (hErr) {
     content.innerHTML = `<div class="empty">Error: ${hErr.message}</div>`;
     return;
   }
 
-  if (!history || history.length === 0) {
-    content.innerHTML = `
-      <div class="vel-waiting">
-        <div class="vel-waiting-icon">⏳</div>
-        <h3>Waiting for first snapshot</h3>
-        <p>Run the cron job once to capture a baseline. Velocity data will appear after the second run (~24h later).</p>
-      </div>`;
-    return;
-  }
-
-  // group by video_id → first & last snapshot
-  const byVideo = new Map();
-  for (const row of history) {
-    if (!byVideo.has(row.video_id)) {
-      byVideo.set(row.video_id, { first: row, last: row });
-    } else {
-      byVideo.get(row.video_id).last = row;
-    }
-  }
-
-  // compute deltas — only videos with 2+ snapshots
-  const deltas = [];
-  for (const [video_id, { first, last }] of byVideo) {
-    if (first.captured_at === last.captured_at) continue;
-    const delta = last.view_count - first.view_count;
-    if (delta <= 0) continue;
-    const growthPct = first.view_count > 0 ? (delta / first.view_count) * 100 : 0;
-    deltas.push({ video_id, delta, growthPct, vph: last.vph, view_count: last.view_count });
-  }
+  const deltas = (velRows || []).map(r => ({
+    video_id:  r.video_id,
+    delta:     r.delta,
+    growthPct: Number(r.growth_pct) || 0,
+    vph:       r.vph,
+    view_count: r.view_count,
+  }));
 
   if (deltas.length === 0) {
     content.innerHTML = `
       <div class="vel-waiting">
         <div class="vel-waiting-icon">📡</div>
-        <h3>Baseline captured</h3>
-        <p>First snapshot is in. Velocity data will appear after the next cron run (~24h). Come back tomorrow.</p>
+        <h3>No velocity data yet for this window</h3>
+        <p>Velocity needs two snapshots of the same video inside the window. With the cron running 3×/day, the ${velWindow}h window fills in after the next run or two.</p>
       </div>`;
     return;
   }
 
-  // top 60 by absolute delta
+  // top 60 by absolute delta (RPC already orders desc; sort kept for safety)
   deltas.sort((a, b) => b.delta - a.delta);
   const top = deltas.slice(0, 60);
   const topIds = top.map(d => d.video_id);
@@ -2216,6 +2164,7 @@ async function loadInsights() {
 // Manual paste-back: generate report in external LLM → paste markdown here → it lives in the system.
 let archiveCompiled = [];   // cached report rows
 let composeOpen = false;
+let pendingComposeType = null; // set by "Save as report" on other pages → opens compose prefilled
 
 function reportDateLabel(d) {
   return new Date(d + "T00:00:00Z")
@@ -2346,6 +2295,16 @@ function wireArchive() {
     archiveCompiled = archiveCompiled.filter(r => String(r.id) !== String(id));
     renderArchive();
   });
+
+  // prefill from "Save as report" elsewhere (e.g. Daily Radar)
+  if (pendingComposeType) {
+    composeOpen = true;
+    $("archiveCompose").classList.remove("hidden");
+    $("acType").value = pendingComposeType;
+    $("acDate").value = new Date().toLocaleDateString("en-CA");
+    $("acBody").focus();
+    pendingComposeType = null;
+  }
 }
 
 /* ---------- Side Panel ---------- */
@@ -2467,7 +2426,7 @@ async function openPanel(v) {
         <div class="pm-label">VPH</div>
         <div class="pm-value">${fmt(v.vph || 0)}/h</div>
       </div>
-      <div class="panel-metric">
+      <div class="panel-metric" title="Engagement Quality Score — durability of attention. Low = thumbnail-driven spike that won't repeat. High = real, lasting interest.">
         <div class="pm-label">EQS</div>
         <div class="pm-value">${(v.eqs || 0).toFixed(2)}</div>
       </div>
