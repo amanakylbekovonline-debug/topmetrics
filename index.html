@@ -388,6 +388,18 @@
   .panel-notes:focus { border-color: #8b5cf6; }
   .panel-saved-note { font-size: 11px; color: #444; margin-top: 5px; height: 14px; }
 
+  /* Add channel (Channels page) */
+  .add-channel { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+  .add-channel input {
+    background: #161616; border: 1px solid #2a2a2a; color: #e5e5e5;
+    padding: 8px 12px; border-radius: 8px; font-size: 13px; outline: none;
+    width: 380px; max-width: 100%;
+  }
+  .add-channel input:focus { border-color: #8b5cf6; }
+  .add-channel-status { font-size: 12px; color: #666; }
+  .add-channel-status.ok  { color: #6ee7b7; }
+  .add-channel-status.err { color: #fca5a5; }
+
   /* Report Archive page */
   .archive-head {
     display: flex; align-items: center; gap: 12px;
@@ -509,7 +521,11 @@
     transition: border-color .2s;
   }
   .daily-checklist.complete { border-color: rgba(34,197,94,.35); }
-  .dc-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .dc-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer; }
+  .dc-chevron { color: #666; font-size: 11px; transition: transform .15s; display: inline-block; }
+  .daily-checklist:not(.collapsed) .dc-chevron { transform: rotate(90deg); }
+  .daily-checklist.collapsed .dc-head { margin-bottom: 0; }
+  .daily-checklist.collapsed .dc-list { display: none; }
   .dc-title {
     font-size: 11px; font-weight: 600; color: #555;
     text-transform: uppercase; letter-spacing: .7px;
@@ -1258,7 +1274,7 @@ async function loadChannels() {
   channelsContent.innerHTML = '<div class="loading">Loading channels...</div>';
   const { data, error } = await supabase
     .from("channels")
-    .select("title, subscriber_count, avg_views, updated_at, videos(count)")
+    .select("title, subscriber_count, avg_views, avg_views_updated_at, videos(count)")
     .order("subscriber_count", { ascending: false });
 
   if (error) {
@@ -1277,6 +1293,11 @@ async function loadChannels() {
   });
 
   channelsContent.innerHTML = `
+    <div class="add-channel">
+      <input type="text" id="addChannelInput" placeholder="Channel URL, @handle, or UC… id"/>
+      <button class="ac-save" id="addChannelBtn">Add channel</button>
+      <span class="add-channel-status" id="addChannelStatus"></span>
+    </div>
     <div class="stats">${rows.length} channels</div>
     <div class="table-wrap">
       <table class="table">
@@ -1286,7 +1307,7 @@ async function loadChannels() {
             <th style="text-align:right">Subscribers</th>
             <th style="text-align:right">Avg Views</th>
             <th style="text-align:right">Videos in DB</th>
-            <th style="text-align:right">Last Updated</th>
+            <th style="text-align:right">Stats Updated</th>
           </tr>
         </thead>
         <tbody>
@@ -1296,11 +1317,81 @@ async function loadChannels() {
               <td style="text-align:right">${fmt(c.subscriber_count || 0)}</td>
               <td style="text-align:right">${c.avg_views != null ? fmt(c.avg_views) : "—"}</td>
               <td style="text-align:right">${c.video_count ?? "—"}</td>
-              <td style="text-align:right; color:#888">${c.updated_at ? ago(c.updated_at) : "—"}</td>
+              <td style="text-align:right; color:#888">${c.avg_views_updated_at ? ago(c.avg_views_updated_at) : "—"}</td>
             </tr>`).join("")}
         </tbody>
       </table>
     </div>`;
+
+  wireAddChannel();
+}
+
+// Accept a raw UC… id or any URL containing /channel/UC… → returns the channel_id or null.
+function extractChannelId(s) {
+  const m = String(s || "").match(/UC[A-Za-z0-9_-]{22}/);
+  return m ? m[0] : null;
+}
+
+function wireAddChannel() {
+  const btn = $("addChannelBtn"), input = $("addChannelInput"), status = $("addChannelStatus");
+  if (!btn) return;
+  const submit = async () => {
+    const raw = (input.value || "").trim();
+    if (!raw) {
+      status.textContent = "Enter a channel URL, @handle, or UC… id";
+      status.className = "add-channel-status err";
+      return;
+    }
+    btn.disabled = true;
+
+    // UC… id present → use directly; otherwise resolve handle/URL via edge function.
+    let id = extractChannelId(raw);
+    if (!id) {
+      status.textContent = "Resolving…";
+      status.className = "add-channel-status";
+      try {
+        const { data, error: rErr } = await supabase.functions.invoke("resolve-channel", { body: { handle: raw } });
+        if (rErr || !data?.channel_id) {
+          btn.disabled = false;
+          status.textContent = `Couldn't resolve: ${data?.error || rErr?.message || "channel not found"}`;
+          status.className = "add-channel-status err";
+          return;
+        }
+        id = data.channel_id;
+        if (data.title) {
+          status.textContent = `Resolved “${data.title}” — adding…`;
+        }
+      } catch (e) {
+        btn.disabled = false;
+        status.textContent = `Resolve failed: ${e.message}`;
+        status.className = "add-channel-status err";
+        return;
+      }
+    }
+
+    if (status.textContent === "Resolving…") status.textContent = "Adding…";
+    status.className = "add-channel-status";
+    const { error } = await supabase
+      .from("channels")
+      .insert({ channel_id: id, title: "pending", subscriber_count: 0, is_active: true });
+    btn.disabled = false;
+    if (error) {
+      if (error.code === "23505" || /duplicate|unique/i.test(error.message || "")) {
+        status.textContent = "Already tracked ✓";
+        status.className = "add-channel-status ok";
+      } else {
+        status.textContent = `Failed: ${error.message}`;
+        status.className = "add-channel-status err";
+      }
+      return;
+    }
+    status.textContent = "Added ✓ — title & stats fill on the next cron run";
+    status.className = "add-channel-status ok";
+    input.value = "";
+    loadChannels();
+  };
+  btn.addEventListener("click", submit);
+  input.addEventListener("keydown", e => { if (e.key === "Enter") submit(); });
 }
 
 /* ---------- Topics (AI clusters) ---------- */
@@ -1808,9 +1899,11 @@ function renderChecklistHTML() {
         <div class="dc-hint">${s.hint}</div>
       </div>
     </div>`).join("");
+  const collapsed = dcCollapsed();
   return `
-    <div class="daily-checklist ${done === total ? "complete" : ""}" id="dailyChecklist">
-      <div class="dc-head">
+    <div class="daily-checklist ${done === total ? "complete" : ""} ${collapsed ? "collapsed" : ""}" id="dailyChecklist">
+      <div class="dc-head" id="dcHead">
+        <span class="dc-chevron">▸</span>
         <div class="dc-title">🧭 Daily analysis pass</div>
         <div class="dc-progress" id="dcProgress">${done}/${total}</div>
         <div class="dc-spacer"></div>
@@ -1820,10 +1913,22 @@ function renderChecklistHTML() {
     </div>`;
 }
 
+// Collapsed by default — the methodology stays one click away without burying the radar data.
+function dcCollapsed() { return localStorage.getItem("tm_checklist_collapsed") !== "0"; }
+
 function wireChecklist() {
   const list = $("dcList");
   if (!list) return;
   const total = RADAR_CHECKLIST.length;
+
+  // expand/collapse — clicking the header (but not Reset) toggles, persisted across days
+  $("dcHead").addEventListener("click", e => {
+    if (e.target.closest("#dcReset")) return;
+    const willCollapse = !$("dailyChecklist").classList.contains("collapsed");
+    $("dailyChecklist").classList.toggle("collapsed", willCollapse);
+    localStorage.setItem("tm_checklist_collapsed", willCollapse ? "1" : "0");
+  });
+
   list.addEventListener("click", e => {
     const stepEl = e.target.closest(".dc-step");
     if (!stepEl) return;
