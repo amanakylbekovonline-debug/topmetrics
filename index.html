@@ -619,6 +619,10 @@
     background: #1a1a1a; border: 1px solid #2a2a2a;
     color: #888; font-size: 11px; padding: 1px 8px; border-radius: 999px;
   }
+  .radar-section-title .rst-note {
+    background: none; border: none; padding: 0; color: #555;
+    font-weight: 400; text-transform: none; letter-spacing: 0;
+  }
   .radar-row {
     display: flex; align-items: flex-start; gap: 12px;
     padding: 11px 14px; border-radius: 10px;
@@ -1860,6 +1864,7 @@ async function loadWeeklyReport() {
     <div class="radar-head">
       <div class="stats">📝 Week of ${weekLabel} · ${allVideos.length} videos · median outlier ${medianOutlier}x</div>
       <button class="copy-btn" id="copyReportBtn">📋 Copy Report Prompt</button>
+      <button class="ac-cancel" id="reportSaveBtn" style="margin-left:0" title="Open the Archive compose form, prefilled as a Weekly report, to paste the generated report back">🗂️ Save as report</button>
     </div>
 
     <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;">
@@ -1892,12 +1897,18 @@ async function loadWeeklyReport() {
       setTimeout(() => { btn.textContent = "📋 Copy Report Prompt"; btn.classList.remove("copied"); }, 2000);
     });
   });
+
+  // save as report → Archive compose prefilled as a Weekly report
+  $("reportSaveBtn").addEventListener("click", () => {
+    pendingComposeType = "weekly";
+    switchPage("archive");
+  });
 }
 
 /* ---------- Daily Radar ---------- */
 let radarWindow = 48; // hours
 
-function buildRadarPrompt(fresh, accel, clusters, smallBreakouts = []) {
+function buildRadarPrompt(fresh, accel, clusters, smallBreakouts = [], creatorOpps = []) {
   const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   const fmtVideo = (v, vel) => {
     const subs = v.channels?.subscriber_count || 0;
@@ -1924,6 +1935,10 @@ function buildRadarPrompt(fresh, accel, clusters, smallBreakouts = []) {
     ? smallBreakouts.map(v => fmtVideo(v, v.velocity_24h)).join("\n\n")
     : "No early breakouts in the last 7d.";
 
+  const creatorSection = creatorOpps.length
+    ? creatorOpps.map(v => fmtVideo(v, v.velocity_24h)).join("\n\n")
+    : "No accelerating small/mid creators right now.";
+
   return `DAILY RADAR BRIEF — ${today}
 Analysis window: last ${radarWindow}h
 
@@ -1933,9 +1948,14 @@ ${"═".repeat(60)}
 ${clusterCtx}
 
 ${"═".repeat(60)}
-ACCELERATING VIDEOS (ranked by velocity_24h — views gained in last ${radarWindow}h)
+ACCELERATING VIDEOS — RAW, ALL SIZES (ranked by velocity_24h — views gained in last ${radarWindow}h)
 ${"═".repeat(60)}
 ${accelSection}
+
+${"═".repeat(60)}
+CREATOR OPPORTUNITIES (<300K subs, ranked by velocity — small/mid creators with momentum NOW)
+${"═".repeat(60)}
+${creatorSection}
 
 ${"═".repeat(60)}
 EARLY BREAKOUTS (<300K subs, outlier ≥ 3x, last 7d — small/mid channels catching a trend early)
@@ -2085,11 +2105,13 @@ async function loadRadar() {
   } catch { /* non-fatal */ }
 
   // --- accelerating videos (top velocity, up to 7d old) ---
-  let accelVideos = [];
+  // Pull a WIDE velocity slice (not just top 25) so small/mid creators — which never
+  // out-rank giants on absolute delta — still surface in the creator-opportunity layer.
+  let accelVideos = [], creatorOpps = [];
   if (velMap.size > 0) {
     const topIds = [...velMap.entries()]
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 25)
+      .slice(0, 150)
       .map(([id]) => id);
     const { data: av } = await supabase
       .from("videos")
@@ -2097,9 +2119,13 @@ async function loadRadar() {
       .in("video_id", topIds)
       .gte("published_at", since7d)
       .gte("duration_seconds", 60);
-    accelVideos = (av || [])
+    const moved = (av || [])
       .map(v => ({ ...v, velocity_24h: velMap.get(v.video_id) || 0 }))
       .sort((a, b) => b.velocity_24h - a.velocity_24h);
+    accelVideos = moved.slice(0, 25);                                    // raw signal (all sizes — giants dominate)
+    creatorOpps = moved
+      .filter(v => { const s = v.channels?.subscriber_count || 0; return s > 0 && s < 300000; })
+      .slice(0, 10);                                                     // opportunity layer (<300K, momentum)
   }
 
   // --- fresh outliers (< radarWindow h old) ---
@@ -2137,7 +2163,7 @@ async function loadRadar() {
     .limit(12);
 
   // register for save-btn
-  [...(accelVideos), ...smallBreakouts, ...(freshVideos || [])].forEach(v => renderedVideos.set(v.video_id, v));
+  [...(accelVideos), ...creatorOpps, ...smallBreakouts, ...(freshVideos || [])].forEach(v => renderedVideos.set(v.video_id, v));
 
   // --- render ---
   const hasVel   = velMap.size > 0;
@@ -2169,6 +2195,10 @@ async function loadRadar() {
     ? accelVideos.map(v => radarRow(v, v.velocity_24h)).join("")
     : `<div class="empty" style="padding:24px 0">${hasVel ? "No accelerating videos found." : "No velocity data yet — baseline captured, check again in 24h."}</div>`;
 
+  const creatorHtml = creatorOpps.length
+    ? creatorOpps.map(v => radarRow(v, v.velocity_24h)).join("")
+    : `<div class="empty" style="padding:24px 0">No accelerating small/mid creators (&lt;300K) right now.</div>`;
+
   const smallHtml = smallBreakouts.length
     ? smallBreakouts.map(v => radarRow(v, v.velocity_24h)).join("")
     : `<div class="empty" style="padding:24px 0">No early breakouts (&lt;300K subs, ≥3x) in the last 7d.</div>`;
@@ -2189,8 +2219,11 @@ async function loadRadar() {
       <button class="ac-cancel" id="radarSaveReportBtn" style="margin-left:0" title="Open the Archive compose form, prefilled as a Daily report, to paste the generated briefing back">🗂️ Save as report</button>
     </div>
 
-    <div class="radar-section-title">⚡ Accelerating <span>${accelVideos.length} videos</span></div>
+    <div class="radar-section-title">⚡ Accelerating <span>${accelVideos.length} videos</span> <span class="rst-note">raw · all sizes</span></div>
     <div id="radarAccel">${accelHtml}</div>
+
+    <div class="radar-section-title">🌱 Creator Opportunities <span>${creatorOpps.length} videos</span> <span class="rst-note">&lt;300K · accelerating</span></div>
+    <div id="radarCreator">${creatorHtml}</div>
 
     <div class="radar-section-title">🚀 Early Breakouts <span>${smallBreakouts.length} videos</span></div>
     <div id="radarSmall">${smallHtml}</div>
@@ -2202,7 +2235,7 @@ async function loadRadar() {
 
   // copy prompt
   $("copyRadarBtn").addEventListener("click", () => {
-    const prompt = buildRadarPrompt(freshVideos || [], accelVideos, clusters || [], smallBreakouts);
+    const prompt = buildRadarPrompt(freshVideos || [], accelVideos, clusters || [], smallBreakouts, creatorOpps);
     navigator.clipboard.writeText(prompt).then(() => {
       const btn = $("copyRadarBtn");
       btn.textContent = "✓ Copied!";
