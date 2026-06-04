@@ -513,6 +513,35 @@
   .signal-breakout .signal-count { border-color: rgba(34,197,94,.3); color: #22c55e; background: rgba(34,197,94,.07); }
   .signal-wave .signal-count { border-color: rgba(139,92,246,.4); color: #c4b5fd; background: rgba(139,92,246,.1); }
 
+  /* Narrative Momentum (week-over-week) panel */
+  .wow-panel {
+    background: #111; border: 1px solid #1f1f1f; border-radius: 12px;
+    padding: 14px 18px; margin-bottom: 20px;
+  }
+  .wow-head {
+    font-size: 11px; font-weight: 600; color: #555;
+    text-transform: uppercase; letter-spacing: .7px; margin-bottom: 10px;
+  }
+  .wow-head .wow-sub { color: #444; font-weight: 500; text-transform: none; letter-spacing: 0; }
+  .wow-list { display: flex; flex-direction: column; gap: 2px; }
+  .wow-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 6px 8px; border-radius: 6px; font-size: 13px;
+  }
+  .wow-row:hover { background: #161616; }
+  .wow-arrow { width: 18px; flex-shrink: 0; font-size: 13px; text-align: center; }
+  .wow-label { color: #d4d4d4; font-weight: 500; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .wow-nums { color: #888; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
+  .wow-prev { color: #555; }
+  .wow-delta {
+    width: 42px; text-align: right; flex-shrink: 0;
+    font-size: 12px; font-weight: 700; color: #666;
+  }
+  .wow-delta.up   { color: #22c55e; }
+  .wow-delta.down { color: #f97316; }
+  .wow-row.up .wow-label   { color: #e5e5e5; }
+  .wow-row.down .wow-label { color: #bbb; }
+
   /* Daily analysis checklist */
   .daily-checklist {
     background: #111; border: 1px solid #1f1f1f;
@@ -1530,7 +1559,72 @@ function openCluster(idx) {
 }
 
 /* ---------- Weekly Report ---------- */
-function buildWeeklyPrompt(videos, accel, clusters, insights, stats) {
+/* ---------- Narrative momentum (week-over-week) ---------- */
+// Publish-date cohorts: this week (≤7d) vs last week (7–14d), grouped by SIGNAL_GROUPS.
+// Works on the existing videos table — no video_history needed — so it's live today and
+// only sharpens as more weeks accumulate. Feeds the report's rising/cooling sections.
+function computeNarrativeWoW(rows) {
+  const bucketOf = ts => {
+    const ageD = (Date.now() - new Date(ts).getTime()) / 86400000;
+    return ageD <= 7 ? "cur" : ageD <= 14 ? "prev" : null;
+  };
+  const groups = Object.fromEntries(SIGNAL_GROUPS.map(g => [g.id, {
+    label: g.label,
+    cur:  { n: 0, ch: new Set(), score: 0 },
+    prev: { n: 0, ch: new Set(), score: 0 },
+  }]));
+
+  for (const v of rows) {
+    const b = bucketOf(v.published_at);
+    if (!b) continue;
+    const t = " " + (v.title || "").toLowerCase() + " ";
+    for (const g of SIGNAL_GROUPS) {
+      if (g.keys.some(k => t.includes(k))) {
+        const slot = groups[g.id][b];
+        slot.n++;
+        slot.ch.add(v.channel_id || v.channels?.title || v.video_id);
+        slot.score += (v.outlier_score || 0);
+        break; // first matching group wins (ordered specific → broad)
+      }
+    }
+  }
+
+  const all = Object.values(groups).map(g => {
+    const cur  = { n: g.cur.n,  ch: g.cur.ch.size,  avgO: g.cur.n  ? g.cur.score  / g.cur.n  : 0 };
+    const prev = { n: g.prev.n, ch: g.prev.ch.size, avgO: g.prev.n ? g.prev.score / g.prev.n : 0 };
+    return { label: g.label, cur, prev, dN: cur.n - prev.n };
+  }).filter(g => g.cur.n > 0 || g.prev.n > 0)
+    .sort((a, b) => (b.cur.n - a.cur.n) || (b.dN - a.dN));
+
+  return {
+    all,
+    rising:  all.filter(g => g.dN > 0).sort((a, b) => b.dN - a.dN),
+    cooling: all.filter(g => g.dN < 0 && g.prev.n > 0).sort((a, b) => a.dN - b.dN),
+  };
+}
+
+function renderWoWPanel(wow) {
+  if (!wow.all.length) return "";
+  const arrow = g => g.dN > 0 ? "📈" : (g.dN < 0 && g.prev.n > 0) ? "📉" : "▪️";
+  const rows = wow.all.map(g => {
+    const cls = g.dN > 0 ? "up" : (g.dN < 0 && g.prev.n > 0) ? "down" : "";
+    const deltaTxt = g.dN === 0 ? "±0" : (g.dN > 0 ? "+" : "") + g.dN;
+    return `
+      <div class="wow-row ${cls}">
+        <span class="wow-arrow">${arrow(g)}</span>
+        <span class="wow-label">${escapeHtml(g.label)}</span>
+        <span class="wow-nums">${g.cur.n} vid · ${g.cur.ch} ch <span class="wow-prev">(prev ${g.prev.n}·${g.prev.ch})</span></span>
+        <span class="wow-delta ${cls}">${deltaTxt}</span>
+      </div>`;
+  }).join("");
+  return `
+    <div class="wow-panel">
+      <div class="wow-head">📊 Narrative Momentum · this week vs last <span class="wow-sub">(outlier videos ≥2x by theme)</span></div>
+      <div class="wow-list">${rows}</div>
+    </div>`;
+}
+
+function buildWeeklyPrompt(videos, accel, clusters, insights, stats, wow) {
   const weekOf = new Date(Date.now() - 7 * 86400000)
     .toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 
@@ -1555,6 +1649,13 @@ function buildWeeklyPrompt(videos, accel, clusters, insights, stats) {
     ? accel.slice(0, 15).map(v => fmtV(v, v.vel7d)).join("\n")
     : "No velocity data yet (accumulating — check after 7 daily cron runs).";
 
+  const wowStr = wow && wow.all.length
+    ? wow.all.map(g => {
+        const dir = g.dN > 0 ? "RISING" : (g.dN < 0 && g.prev.n > 0) ? "COOLING" : "flat";
+        return `• ${g.label}: this week ${g.cur.n} outlier videos / ${g.cur.ch} channels (avg ${g.cur.avgO.toFixed(1)}x) | last week ${g.prev.n} / ${g.prev.ch} ch (avg ${g.prev.avgO.toFixed(1)}x) | Δ ${g.dN > 0 ? "+" : ""}${g.dN} → ${dir}`;
+      }).join("\n")
+    : "Not enough data for a week-over-week comparison yet.";
+
   const sizeBreakdown = `Small (<100K subs): ${stats.small} videos | Mid (100K–1M): ${stats.mid} | Large (>1M): ${stats.large}`;
 
   return `FINANCE YOUTUBE OPPORTUNITY REPORT — Week of ${weekOf}
@@ -1577,6 +1678,11 @@ ${"═".repeat(65)}
 ${insightCtx}
 
 ${"═".repeat(65)}
+NARRATIVE MOMENTUM — WEEK OVER WEEK (publish-date cohorts; hard evidence for sections 2 & 6)
+${"═".repeat(65)}
+${wowStr}
+
+${"═".repeat(65)}
 TOP 40 OUTLIER VIDEOS THIS WEEK (ranked by outlier score)
 ${"═".repeat(65)}
 ${topVideos}
@@ -1597,10 +1703,10 @@ Generate the Finance YouTube Opportunity Report using EXACTLY this 8-section str
 2–3 sentences. What defined finance YouTube attention this week? Lead with the clearest signal.
 
 ━━━ 2. TOP BREAKOUT NARRATIVES (5–7) ━━━
-For each narrative:
+Lead with themes marked RISING in the Narrative Momentum table. For each narrative:
   Name: [theme name]
   Why it matters: [1–2 sentences]
-  Evidence: [video count, outlier range, examples]
+  Evidence: [this-week video count + channel count + week-over-week Δ, outlier range, examples]
   Channels that won: [specific channels]
   Confidence: HIGH / MEDIUM / LOW
 
@@ -1621,7 +1727,8 @@ For each:
   What a creator can borrow
 
 ━━━ 6. TOPICS COOLING DOWN ━━━
-2–4 themes showing signs of saturation or declining outlier scores. Be honest about confidence level.
+Ground this in the Narrative Momentum table — prioritize themes marked COOLING (negative week-over-week Δ).
+2–4 themes showing declining video/channel counts or outlier scores. Cite the Δ. Be honest about confidence (small samples = low confidence).
 
 ━━━ 7. SUGGESTED VIDEO IDEAS (5–8) ━━━
 For each idea:
@@ -1652,6 +1759,7 @@ async function loadWeeklyReport() {
 
   const since7d  = new Date(Date.now() -  7 * 86400000).toISOString();
   const since8d  = new Date(Date.now() -  8 * 86400000).toISOString();
+  const since14d = new Date(Date.now() - 14 * 86400000).toISOString();
 
   // --- velocity from video_history (7-day window, server-side; avoids 1000-row cap) ---
   const velMap7 = new Map();
@@ -1675,6 +1783,17 @@ async function loadWeeklyReport() {
   }
 
   const allVideos = (weekVideos || []).map(v => ({ ...v, vel7d: velMap7.get(v.video_id) ?? null }));
+
+  // --- narrative momentum (week-over-week): outlier≥2 videos across the last 14d ---
+  const { data: wowPool } = await supabase
+    .from("videos")
+    .select("title, outlier_score, view_count, published_at, channel_id, channels(title, subscriber_count)")
+    .gte("published_at", since14d)
+    .gte("duration_seconds", 60)
+    .gte("outlier_score", 2)
+    .order("published_at", { ascending: false })
+    .limit(1000);
+  const wow = computeNarrativeWoW(wowPool || []);
 
   // --- top accelerating (by vel7d) ---
   const accelVideos = [...allVideos]
@@ -1758,12 +1877,14 @@ async function loadWeeklyReport() {
       </div>
     </div>
 
+    ${renderWoWPanel(wow)}
+
     <div class="radar-section-title">🏆 Top Outliers This Week <span>${allVideos.length} videos</span></div>
     <div>${topRows}</div>
     ${allVideos.length > 20 ? `<div class="stats" style="margin-top:8px">+ ${allVideos.length - 20} more videos included in prompt</div>` : ""}`;
 
   $("copyReportBtn").addEventListener("click", () => {
-    const prompt = buildWeeklyPrompt(allVideos, accelVideos, clusters || [], insights, stats);
+    const prompt = buildWeeklyPrompt(allVideos, accelVideos, clusters || [], insights, stats, wow);
     navigator.clipboard.writeText(prompt).then(() => {
       const btn = $("copyReportBtn");
       btn.textContent = "✓ Copied!";
@@ -1801,7 +1922,7 @@ function buildRadarPrompt(fresh, accel, clusters, smallBreakouts = []) {
 
   const smallSection = smallBreakouts.length
     ? smallBreakouts.map(v => fmtVideo(v, v.velocity_24h)).join("\n\n")
-    : "No small-channel breakouts in the last 7d.";
+    : "No early breakouts in the last 7d.";
 
   return `DAILY RADAR BRIEF — ${today}
 Analysis window: last ${radarWindow}h
@@ -1817,7 +1938,7 @@ ${"═".repeat(60)}
 ${accelSection}
 
 ${"═".repeat(60)}
-SMALL-CHANNEL BREAKOUTS (<300K subs, outlier ≥ 4x, last 7d — opportunity windows)
+EARLY BREAKOUTS (<300K subs, outlier ≥ 3x, last 7d — small/mid channels catching a trend early)
 ${"═".repeat(60)}
 ${smallSection}
 
@@ -1991,14 +2112,15 @@ async function loadRadar() {
     .order("outlier_score", { ascending: false })
     .limit(30);
 
-  // --- small-channel breakouts (<300K subs, outlier ≥ 4x, last 7d) ---
-  // Opportunity windows: small/mid channels punching above their tier inside live themes.
+  // --- early breakouts (<300K subs, outlier ≥ 3x, last 7d) ---
+  // Catch trends at the seed stage: small/mid channels punching above their tier.
+  // 3x = an EARLY signal (not a confirmed 5x+ breakout), hence "Early Breakouts".
   const { data: breakoutPool } = await supabase
     .from("videos")
     .select("*, channels(title, subscriber_count)")
     .gte("published_at", since7d)
     .gte("duration_seconds", 60)
-    .gte("outlier_score", 4)
+    .gte("outlier_score", 3)
     .order("outlier_score", { ascending: false })
     .limit(40);
   const smallBreakouts = (breakoutPool || [])
@@ -2049,7 +2171,7 @@ async function loadRadar() {
 
   const smallHtml = smallBreakouts.length
     ? smallBreakouts.map(v => radarRow(v, v.velocity_24h)).join("")
-    : `<div class="empty" style="padding:24px 0">No small-channel breakouts in the last 7d.</div>`;
+    : `<div class="empty" style="padding:24px 0">No early breakouts (&lt;300K subs, ≥3x) in the last 7d.</div>`;
 
   const freshHtml = (freshVideos || []).length
     ? freshVideos.map(v => radarRow(v, velMap.get(v.video_id) ?? null)).join("")
@@ -2070,7 +2192,7 @@ async function loadRadar() {
     <div class="radar-section-title">⚡ Accelerating <span>${accelVideos.length} videos</span></div>
     <div id="radarAccel">${accelHtml}</div>
 
-    <div class="radar-section-title">🚀 Small Breakouts <span>${smallBreakouts.length} videos</span></div>
+    <div class="radar-section-title">🚀 Early Breakouts <span>${smallBreakouts.length} videos</span></div>
     <div id="radarSmall">${smallHtml}</div>
 
     <div class="radar-section-title">🆕 Fresh Outliers <span>${(freshVideos||[]).length} videos</span></div>
