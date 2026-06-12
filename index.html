@@ -530,17 +530,26 @@
   }
   .wow-row:hover { background: #161616; }
   .wow-arrow { width: 18px; flex-shrink: 0; font-size: 13px; text-align: center; }
-  .wow-label { color: #d4d4d4; font-weight: 500; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .wow-nums { color: #888; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
+  .wow-label { color: #d4d4d4; font-weight: 500; flex: 1; min-width: 90px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .wow-sat {
+    flex-shrink: 0; font-size: 11px; font-weight: 600;
+    padding: 1px 9px; border-radius: 999px; border: 1px solid transparent; white-space: nowrap;
+  }
+  .wow-sat.sat-open { color: #6ee7b7; background: rgba(34,197,94,.1);  border-color: rgba(34,197,94,.3); }
+  .wow-sat.sat-warm { color: #fcd34d; background: rgba(245,158,11,.1); border-color: rgba(245,158,11,.3); }
+  .wow-sat.sat-hivar { color: #fdba74; background: rgba(249,115,22,.1); border-color: rgba(249,115,22,.3); }
+  .wow-sat.sat-sat  { color: #fca5a5; background: rgba(239,68,68,.1);  border-color: rgba(239,68,68,.3); }
+  .wow-sat.sat-thin { color: #777;    background: #1a1a1a;             border-color: #2a2a2a; }
+  .wow-metrics { color: #888; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
+  .wow-metrics b { color: #d4d4d4; font-weight: 600; }
   .wow-prev { color: #555; }
   .wow-delta {
-    width: 42px; text-align: right; flex-shrink: 0;
+    width: 38px; text-align: right; flex-shrink: 0;
     font-size: 12px; font-weight: 700; color: #666;
   }
   .wow-delta.up   { color: #22c55e; }
   .wow-delta.down { color: #f97316; }
-  .wow-row.up .wow-label   { color: #e5e5e5; }
-  .wow-row.down .wow-label { color: #bbb; }
+  @media (max-width: 900px) { .wow-metrics { display: none; } }
 
   /* Daily analysis checklist */
   .daily-checklist {
@@ -1567,16 +1576,20 @@ function openCluster(idx) {
 // Publish-date cohorts: this week (≤7d) vs last week (7–14d), grouped by SIGNAL_GROUPS.
 // Works on the existing videos table — no video_history needed — so it's live today and
 // only sharpens as more weeks accumulate. Feeds the report's rising/cooling sections.
+// Pass the FULL 14d longform pool (all outlier values + comment_count). Per theme we derive:
+//   total   = every video in the theme (the saturation denominator)
+//   n       = outlier videos (≥2x) — the "breakout" count
+//   hitRate = n / total → the explicit saturation read (high = open window, low = crowded)
+//   avgO    = lift (avg outlier of the breakouts)
+//   commR   = comments per 1000 views (engagement / controversy proxy — NOT captured by EQS)
 function computeNarrativeWoW(rows) {
+  const OUTLIER_T = 2;
   const bucketOf = ts => {
     const ageD = (Date.now() - new Date(ts).getTime()) / 86400000;
     return ageD <= 7 ? "cur" : ageD <= 14 ? "prev" : null;
   };
-  const groups = Object.fromEntries(SIGNAL_GROUPS.map(g => [g.id, {
-    label: g.label,
-    cur:  { n: 0, ch: new Set(), score: 0 },
-    prev: { n: 0, ch: new Set(), score: 0 },
-  }]));
+  const mk = () => ({ n: 0, total: 0, ch: new Set(), score: 0, commSum: 0, commN: 0 });
+  const groups = Object.fromEntries(SIGNAL_GROUPS.map(g => [g.id, { label: g.label, cur: mk(), prev: mk() }]));
 
   for (const v of rows) {
     const b = bucketOf(v.published_at);
@@ -1584,21 +1597,38 @@ function computeNarrativeWoW(rows) {
     const t = " " + (v.title || "").toLowerCase() + " ";
     for (const g of SIGNAL_GROUPS) {
       if (g.keys.some(k => t.includes(k))) {
-        const slot = groups[g.id][b];
-        slot.n++;
-        slot.ch.add(v.channel_id || v.channels?.title || v.video_id);
-        slot.score += (v.outlier_score || 0);
+        const s = groups[g.id][b];
+        s.total++;
+        const views = v.view_count || 0;
+        if (views > 0) { s.commSum += (v.comment_count || 0) / views; s.commN++; }
+        const o = v.outlier_score || 0;
+        if (o >= OUTLIER_T) { s.n++; s.ch.add(v.channel_id || v.channels?.title || v.video_id); s.score += o; }
         break; // first matching group wins (ordered specific → broad)
       }
     }
   }
 
+  const pack = s => ({
+    n: s.n, total: s.total, ch: s.ch.size,
+    avgO:    s.n     ? s.score / s.n        : 0,
+    hitRate: s.total ? s.n / s.total        : 0,
+    commR:   s.commN ? (s.commSum / s.commN) * 1000 : 0,
+  });
+  // Saturation read from this week's cohort — 2 axes: hit-rate (how often it breaks out)
+  // AND lift (how big when it does). Volume floor avoids reading noise off tiny samples.
+  const satLabel = c => {
+    if (c.total < 8)       return { key: "thin",  txt: "Thin",        emoji: "⚪" };
+    if (c.hitRate >= 0.35) return { key: "open",  txt: "Open window", emoji: "🟢" };
+    if (c.hitRate >= 0.15) return { key: "warm",  txt: "Competitive", emoji: "🟡" };
+    if (c.avgO    >= 3)    return { key: "hivar", txt: "High-payoff", emoji: "🟠" }; // crowded but breakouts are big
+    return                        { key: "sat",   txt: "Saturated",   emoji: "🔴" }; // crowded + weak → avoid
+  };
+
   const all = Object.values(groups).map(g => {
-    const cur  = { n: g.cur.n,  ch: g.cur.ch.size,  avgO: g.cur.n  ? g.cur.score  / g.cur.n  : 0 };
-    const prev = { n: g.prev.n, ch: g.prev.ch.size, avgO: g.prev.n ? g.prev.score / g.prev.n : 0 };
-    return { label: g.label, cur, prev, dN: cur.n - prev.n };
-  }).filter(g => g.cur.n > 0 || g.prev.n > 0)
-    .sort((a, b) => (b.cur.n - a.cur.n) || (b.dN - a.dN));
+    const cur = pack(g.cur), prev = pack(g.prev);
+    return { label: g.label, cur, prev, dN: cur.n - prev.n, sat: satLabel(cur) };
+  }).filter(g => g.cur.total > 0 || g.prev.total > 0)
+    .sort((a, b) => (b.cur.n - a.cur.n) || (b.cur.total - a.cur.total));
 
   return {
     all,
@@ -1612,18 +1642,23 @@ function renderWoWPanel(wow) {
   const arrow = g => g.dN > 0 ? "📈" : (g.dN < 0 && g.prev.n > 0) ? "📉" : "▪️";
   const rows = wow.all.map(g => {
     const cls = g.dN > 0 ? "up" : (g.dN < 0 && g.prev.n > 0) ? "down" : "";
-    const deltaTxt = g.dN === 0 ? "±0" : (g.dN > 0 ? "+" : "") + g.dN;
+    const d = g.dN === 0 ? "±0" : (g.dN > 0 ? "+" : "") + g.dN;
+    const c = g.cur;
+    const hitPct = (c.hitRate * 100).toFixed(0);
     return `
       <div class="wow-row ${cls}">
         <span class="wow-arrow">${arrow(g)}</span>
         <span class="wow-label">${escapeHtml(g.label)}</span>
-        <span class="wow-nums">${g.cur.n} vid · ${g.cur.ch} ch <span class="wow-prev">(prev ${g.prev.n}·${g.prev.ch})</span></span>
-        <span class="wow-delta ${cls}">${deltaTxt}</span>
+        <span class="wow-sat sat-${g.sat.key}" title="${g.sat.txt} — outlier hit-rate ${hitPct}% (${c.n} of ${c.total})">${g.sat.emoji} ${g.sat.txt}</span>
+        <span class="wow-metrics">lift <b>${c.avgO.toFixed(1)}x</b> · hit <b>${hitPct}%</b> <span class="wow-prev">(${c.n}/${c.total})</span> · 💬 ${c.commR.toFixed(1)}</span>
+        <span class="wow-delta ${cls}" title="outlier videos this week vs last week">${d}</span>
       </div>`;
   }).join("");
   return `
     <div class="wow-panel">
-      <div class="wow-head">📊 Narrative Momentum · this week vs last <span class="wow-sub">(outlier videos ≥2x by theme)</span></div>
+      <div class="wow-head">📊 Narrative Momentum &amp; Saturation · this week
+        <span class="wow-sub">lift = avg outlier · hit = outlier rate (saturation) · 💬 = comments/1k views · Δ = outlier videos vs last week · approx (keyword-tagged)</span>
+      </div>
       <div class="wow-list">${rows}</div>
     </div>`;
 }
@@ -1655,8 +1690,10 @@ function buildWeeklyPrompt(videos, accel, clusters, insights, stats, wow) {
 
   const wowStr = wow && wow.all.length
     ? wow.all.map(g => {
-        const dir = g.dN > 0 ? "RISING" : (g.dN < 0 && g.prev.n > 0) ? "COOLING" : "flat";
-        return `• ${g.label}: this week ${g.cur.n} outlier videos / ${g.cur.ch} channels (avg ${g.cur.avgO.toFixed(1)}x) | last week ${g.prev.n} / ${g.prev.ch} ch (avg ${g.prev.avgO.toFixed(1)}x) | Δ ${g.dN > 0 ? "+" : ""}${g.dN} → ${dir}`;
+        const c = g.cur, p = g.prev;
+        const dir = g.dN > 0 ? "RISING" : (g.dN < 0 && p.n > 0) ? "COOLING" : "flat";
+        const hit = x => (x.hitRate * 100).toFixed(0);
+        return `• ${g.label} [${g.sat.txt}]: this wk ${c.n}/${c.total} outliers (hit ${hit(c)}%, lift ${c.avgO.toFixed(1)}x, ${c.ch} ch, 💬${c.commR.toFixed(1)}/1k) | last wk ${p.n}/${p.total} (hit ${hit(p)}%, lift ${p.avgO.toFixed(1)}x) | Δoutliers ${g.dN > 0 ? "+" : ""}${g.dN} → ${dir}`;
       }).join("\n")
     : "Not enough data for a week-over-week comparison yet.";
 
@@ -1682,8 +1719,13 @@ ${"═".repeat(65)}
 ${insightCtx}
 
 ${"═".repeat(65)}
-NARRATIVE MOMENTUM — WEEK OVER WEEK (publish-date cohorts; hard evidence for sections 2 & 6)
+NARRATIVE MOMENTUM & SATURATION — WEEK OVER WEEK (hard evidence for sections 2 & 6)
 ${"═".repeat(65)}
+How to read this — it is the "where to enter" signal:
+  • hit% = outlier videos / total videos in the theme = SATURATION. High hit% = open window (theme rewards new entries). Low hit% with many videos = crowded/overheated, avoid.
+  • lift = average outlier multiple of the breakouts. 💬 = comments per 1k views (engagement/controversy).
+  • [Open window] = enter (high hit-rate); [Competitive] = possible with a strong angle; [High-payoff] = crowded but breakouts are big (high lift, low hit-rate — needs an exceptional angle); [Saturated] = crowded + weak, avoid; [Thin] = too few videos to judge (low confidence).
+  • Tagging is keyword-based (approximate). Do not over-read a single theme.
 ${wowStr}
 
 ${"═".repeat(65)}
@@ -1750,11 +1792,19 @@ MANDATORY RULES
 ${"═".repeat(65)}
 — No financial advice, price predictions, or investment recommendations
 — No claims that any stock, asset, or market will rise or fall
-— Every serious claim needs evidence (video count, outlier scores, channel names)
-— Mark weak signals: "(low confidence — N=${" "}videos, limited sample)"
 — Write for a finance creator choosing what to film next — not for an investor
 — No filler, no generic SEO advice
-— If evidence is thin for a section, say so clearly rather than inventing patterns`;
+— If evidence is thin for a section, say so clearly rather than inventing patterns
+
+EVIDENCE DISCIPLINE (strict — violating these makes the report worthless):
+— Every narrative, pattern, and idea card MUST end with: "n=<count>, confidence=<High|Medium|Low>".
+— Set confidence=Low automatically whenever n<5. Never claim High on a single channel or a single video.
+— BANNED unless directly supported by the data given: causal / mind-reading language —
+  "because", "due to", "the algorithm prefers/boosts", "audiences are hungry for", "people want",
+  "this proves", "driven by". You have view counts and outlier scores, NOT reasons. State the
+  observed pattern ("X theme had a higher outlier rate"), not an invented cause.
+— Allowed hedge for any inferred cause: "possible read (not in data): …" — use sparingly.
+— Use the Narrative Momentum / saturation numbers verbatim; cite n; do not round away small samples.`;
 }
 
 async function loadWeeklyReport() {
@@ -1788,13 +1838,14 @@ async function loadWeeklyReport() {
 
   const allVideos = (weekVideos || []).map(v => ({ ...v, vel7d: velMap7.get(v.video_id) ?? null }));
 
-  // --- narrative momentum (week-over-week): outlier≥2 videos across the last 14d ---
+  // --- narrative momentum + saturation: ALL longform videos across the last 14d ---
+  // (no outlier filter — we need the full denominator for hit-rate; ~755 rows now, cap 1000.
+  //  If the roster grows enough to approach 1000 in 14d, split into two 7-day queries.)
   const { data: wowPool } = await supabase
     .from("videos")
-    .select("title, outlier_score, view_count, published_at, channel_id, channels(title, subscriber_count)")
+    .select("title, outlier_score, view_count, comment_count, published_at, channel_id, channels(title, subscriber_count)")
     .gte("published_at", since14d)
     .gte("duration_seconds", 60)
-    .gte("outlier_score", 2)
     .order("published_at", { ascending: false })
     .limit(1000);
   const wow = computeNarrativeWoW(wowPool || []);
@@ -1998,8 +2049,9 @@ Generate a Daily Radar briefing with these sections:
 STRICT RULES:
 — No financial advice, price predictions, or investment recommendations
 — No claims about whether a stock/asset/market will go up or down
-— Mark low-confidence observations: "(low confidence — limited sample)"
-— Be specific: cite video titles and channel names
+— Be specific: cite video titles and channel names; attach n=<count> + confidence=<High|Med|Low> to each flagged signal
+— Confidence=Low whenever n<5 or it's a single channel/video. Don't call one video a trend.
+— BANNED unless the data shows it: "because", "the algorithm prefers", "audiences are hungry for", "people want", "driven by", "this proves". You have views + outlier scores, NOT reasons — describe the observed pattern, not an invented cause. Hedge any guess as "possible read (not in data): …".
 — Keep total response under 600 words
 — Write for a finance creator deciding what to film next week, not for an investor`;
 }
@@ -2318,13 +2370,15 @@ async function loadVelocity() {
   };
 
   function renderVelGrid(sizeVal) {
-    const cards = top
-      .filter(d => {
-        if (sizeVal === "all") return true;
-        const v = videoMap.get(d.video_id);
-        if (!v) return false;
-        return sizeTag(v.channels?.subscriber_count || 0) === sizeVal;
-      })
+    const filtered = top.filter(d => {
+      if (sizeVal === "all") return true;
+      const v = videoMap.get(d.video_id);
+      if (!v) return false;
+      const subs = v.channels?.subscriber_count || 0;
+      if (sizeVal === "creator") return subs > 0 && subs < 300000; // ICP default
+      return sizeTag(subs) === sizeVal;
+    });
+    const cards = filtered
       .map(d => {
         const v = videoMap.get(d.video_id);
         if (!v) return "";
@@ -2354,7 +2408,8 @@ async function loadVelocity() {
       }).join("");
 
     $("velGrid").innerHTML = cards || '<div class="empty">No videos match filter</div>';
-    $("velStats").textContent = `${top.length} growing videos · last ${velWindow}h`;
+    const scope = sizeVal === "all" ? "" : sizeVal === "creator" ? " · creators <300K" : ` · ${sizeVal}`;
+    $("velStats").textContent = `${filtered.length} of ${top.length} growing videos${scope} · last ${velWindow}h`;
   }
 
   content.innerHTML = `
@@ -2366,6 +2421,7 @@ async function loadVelocity() {
         <button class="date-tab ${velWindow === 168 ? "active" : ""}" data-velwin="168">7d</button>
       </div>
       <select id="velSize" style="background:#161616;border:1px solid #2a2a2a;color:#e5e5e5;padding:7px 12px;border-radius:8px;font-size:13px;outline:none;">
+        <option value="creator" selected>Creator &lt;300K</option>
         <option value="all">All sizes</option>
         <option value="small">Small &lt;100K</option>
         <option value="mid">Mid 100K–1M</option>
@@ -2374,7 +2430,7 @@ async function loadVelocity() {
     </div>
     <div class="grid" id="velGrid"></div>`;
 
-  renderVelGrid("all");
+  renderVelGrid("creator");
 
   $("velSize").addEventListener("change", e => renderVelGrid(e.target.value));
 
