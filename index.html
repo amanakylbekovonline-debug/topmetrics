@@ -523,33 +523,40 @@
     text-transform: uppercase; letter-spacing: .7px; margin-bottom: 10px;
   }
   .wow-head .wow-sub { color: #444; font-weight: 500; text-transform: none; letter-spacing: 0; }
-  .wow-list { display: flex; flex-direction: column; gap: 2px; }
-  .wow-row {
-    display: flex; align-items: center; gap: 10px;
-    padding: 6px 8px; border-radius: 6px; font-size: 13px;
+  .wow-list { display: flex; flex-direction: column; gap: 4px; }
+  .wow-card {
+    padding: 8px 10px; border-radius: 8px;
+    border: 1px solid #1a1a1a; background: #131313;
   }
-  .wow-row:hover { background: #161616; }
+  .wow-card:hover { border-color: #2a2a2a; }
+  .wow-card.up   { border-left: 2px solid rgba(34,197,94,.5); }
+  .wow-card.down { border-left: 2px solid rgba(249,115,22,.45); }
+  .wow-c-head { display: flex; align-items: center; gap: 9px; }
+  .wow-c-metrics { font-size: 12px; color: #888; margin-top: 4px; padding-left: 27px; line-height: 1.5; }
+  .wow-c-metrics b { color: #d4d4d4; font-weight: 600; }
   .wow-arrow { width: 18px; flex-shrink: 0; font-size: 13px; text-align: center; }
-  .wow-label { color: #d4d4d4; font-weight: 500; flex: 1; min-width: 90px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .wow-sat {
+  .wow-label { color: #e5e5e5; font-weight: 500; font-size: 13px; flex: 1; min-width: 80px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .wow-sat, .wow-conf {
     flex-shrink: 0; font-size: 11px; font-weight: 600;
     padding: 1px 9px; border-radius: 999px; border: 1px solid transparent; white-space: nowrap;
   }
-  .wow-sat.sat-open { color: #6ee7b7; background: rgba(34,197,94,.1);  border-color: rgba(34,197,94,.3); }
-  .wow-sat.sat-warm { color: #fcd34d; background: rgba(245,158,11,.1); border-color: rgba(245,158,11,.3); }
+  .wow-sat.sat-open  { color: #6ee7b7; background: rgba(34,197,94,.1);  border-color: rgba(34,197,94,.3); }
+  .wow-sat.sat-warm  { color: #fcd34d; background: rgba(245,158,11,.1); border-color: rgba(245,158,11,.3); }
   .wow-sat.sat-hivar { color: #fdba74; background: rgba(249,115,22,.1); border-color: rgba(249,115,22,.3); }
-  .wow-sat.sat-sat  { color: #fca5a5; background: rgba(239,68,68,.1);  border-color: rgba(239,68,68,.3); }
-  .wow-sat.sat-thin { color: #777;    background: #1a1a1a;             border-color: #2a2a2a; }
-  .wow-metrics { color: #888; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
-  .wow-metrics b { color: #d4d4d4; font-weight: 600; }
+  .wow-sat.sat-sat   { color: #fca5a5; background: rgba(239,68,68,.1);  border-color: rgba(239,68,68,.3); }
+  .wow-sat.sat-thin  { color: #777;    background: #1a1a1a;             border-color: #2a2a2a; }
+  .wow-conf.conf-high { color: #9ca3af; background: #1a1a1a; border-color: #2a2a2a; }
+  .wow-conf.conf-med  { color: #a8a29e; background: #1a1a1a; border-color: #2a2a2a; }
+  .wow-conf.conf-low  { color: #d97706; background: rgba(217,119,6,.08); border-color: rgba(217,119,6,.25); }
   .wow-prev { color: #555; }
+  .wow-warn { color: #fbbf24 !important; }
   .wow-delta {
-    width: 38px; text-align: right; flex-shrink: 0;
+    width: 36px; text-align: right; flex-shrink: 0;
     font-size: 12px; font-weight: 700; color: #666;
   }
   .wow-delta.up   { color: #22c55e; }
   .wow-delta.down { color: #f97316; }
-  @media (max-width: 900px) { .wow-metrics { display: none; } }
+  @media (max-width: 760px) { .wow-c-metrics { padding-left: 0; } }
 
   /* Daily analysis checklist */
   .daily-checklist {
@@ -1078,12 +1085,26 @@ const SIGNAL_GROUPS = [
   { id: "stocks",      label: "Stocks / Investing",       tag: "Stocks",       keys: ["stock", "invest", "s&p", "dividend", "portfolio", "etf", "index fund", "vanguard", "fidelity"] },
 ];
 
+// Word-boundary matchers — kill substring false positives (goldman→gold, ethics→eth,
+// iran→ira, taxi→tax). Short/space-wrapped keys match as exact words; longer keys allow
+// inflection (stock→stocks, commodit→commodity). Single source of truth for tagging.
+const SIGNAL_MATCHERS = SIGNAL_GROUPS.map(g => ({
+  ...g,
+  res: g.keys.map(k => {
+    const trimmed = k.trim();
+    const esc = trimmed.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const exact = /(^\s|\s$)/.test(k) || trimmed.length <= 4; // exact word for short/spaced keys
+    return new RegExp("\\b" + esc + (exact ? "\\b" : ""), "i");
+  }),
+}));
+function narrativeOf(title) {
+  const t = title || "";
+  for (const g of SIGNAL_MATCHERS) if (g.res.some(re => re.test(t))) return g;
+  return null; // first matching group wins (ordered specific → broad)
+}
+
 function narrativeTag(v) {
-  const t = (" " + (v.title || "").toLowerCase() + " ");
-  for (const g of SIGNAL_GROUPS) {
-    if (g.keys.some(k => t.includes(k))) return g.tag;
-  }
-  return null;
+  return narrativeOf(v.title)?.tag || null;
 }
 
 function computeSignals(videos) {
@@ -1093,14 +1114,11 @@ function computeSignals(videos) {
   for (const v of videos) {
     const score = v.outlier_score || 0;
     if (score < THRESHOLD) continue;
-    const t = (" " + (v.title || "").toLowerCase() + " ");
-    for (const g of SIGNAL_GROUPS) {
-      if (g.keys.some(k => t.includes(k))) {
-        groups[g.id].vids.push(v);
-        groups[g.id].total += score;
-        groups[g.id].channelSet.add(v.channel_id || v.channels?.title || v.video_id);
-        break; // first matching group wins (ordered specific → broad)
-      }
+    const g = narrativeOf(v.title);
+    if (g) {
+      groups[g.id].vids.push(v);
+      groups[g.id].total += score;
+      groups[g.id].channelSet.add(v.channel_id || v.channels?.title || v.video_id);
     }
   }
 
@@ -1584,49 +1602,80 @@ function openCluster(idx) {
 //   commR   = comments per 1000 views (engagement / controversy proxy — NOT captured by EQS)
 function computeNarrativeWoW(rows) {
   const OUTLIER_T = 2;
+  const CREATOR_MAX = 300000; // ICP boundary: <300K = creator/small-mid, ≥300K = big
   const bucketOf = ts => {
     const ageD = (Date.now() - new Date(ts).getTime()) / 86400000;
     return ageD <= 7 ? "cur" : ageD <= 14 ? "prev" : null;
   };
-  const mk = () => ({ n: 0, total: 0, ch: new Set(), score: 0, commSum: 0, commN: 0 });
+  const median = arr => {
+    if (!arr.length) return 0;
+    const a = [...arr].sort((x, y) => x - y); const m = a.length >> 1;
+    return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
+  };
+  const mk = () => ({
+    total: 0, n: 0, score: 0, scores: [],
+    chOut: new Map(),          // channel → outlier count (for concentration)
+    commSum: 0, commN: 0,
+    cTotal: 0, cN: 0, cScore: 0, // creator <300K
+    bN: 0, bScore: 0,            // big ≥300K (outliers only, for lift comparison)
+  });
   const groups = Object.fromEntries(SIGNAL_GROUPS.map(g => [g.id, { label: g.label, cur: mk(), prev: mk() }]));
 
   for (const v of rows) {
     const b = bucketOf(v.published_at);
     if (!b) continue;
-    const t = " " + (v.title || "").toLowerCase() + " ";
-    for (const g of SIGNAL_GROUPS) {
-      if (g.keys.some(k => t.includes(k))) {
-        const s = groups[g.id][b];
-        s.total++;
-        const views = v.view_count || 0;
-        if (views > 0) { s.commSum += (v.comment_count || 0) / views; s.commN++; }
-        const o = v.outlier_score || 0;
-        if (o >= OUTLIER_T) { s.n++; s.ch.add(v.channel_id || v.channels?.title || v.video_id); s.score += o; }
-        break; // first matching group wins (ordered specific → broad)
-      }
+    const g = narrativeOf(v.title);
+    if (!g) continue;
+    const s = groups[g.id][b];
+    s.total++;
+    const views = v.view_count || 0;
+    if (views > 0) { s.commSum += (v.comment_count || 0) / views; s.commN++; }
+    const subs = v.channels?.subscriber_count || 0;
+    const isCreator = subs > 0 && subs < CREATOR_MAX;
+    if (isCreator) s.cTotal++;
+    const o = v.outlier_score || 0;
+    if (o >= OUTLIER_T) {
+      s.n++; s.score += o; s.scores.push(o);
+      const ch = v.channel_id || v.channels?.title || v.video_id;
+      s.chOut.set(ch, (s.chOut.get(ch) || 0) + 1);
+      if (isCreator) { s.cN++; s.cScore += o; } else { s.bN++; s.bScore += o; }
     }
   }
 
-  const pack = s => ({
-    n: s.n, total: s.total, ch: s.ch.size,
-    avgO:    s.n     ? s.score / s.n        : 0,
-    hitRate: s.total ? s.n / s.total        : 0,
-    commR:   s.commN ? (s.commSum / s.commN) * 1000 : 0,
-  });
-  // Saturation read from this week's cohort — 2 axes: hit-rate (how often it breaks out)
-  // AND lift (how big when it does). Volume floor avoids reading noise off tiny samples.
+  const pack = s => {
+    const topShare = s.n ? Math.max(...s.chOut.values()) / s.n : 0;
+    return {
+      n: s.n, total: s.total, ch: s.chOut.size,
+      avgO:    s.n     ? s.score / s.n : 0,
+      medO:    median(s.scores),
+      hitRate: s.total ? s.n / s.total : 0,
+      commR:   s.commN ? (s.commSum / s.commN) * 1000 : 0,
+      topShare,                                              // breadth: outlier share of single biggest channel
+      cTotal: s.cTotal, cN: s.cN,
+      creatorHit:  s.cTotal ? s.cN / s.cTotal : 0,
+      creatorLift: s.cN ? s.cScore / s.cN : 0,
+      bigLift:     s.bN ? s.bScore / s.bN : 0, bN: s.bN,
+    };
+  };
+  // Saturation read — 2 axes: hit-rate (how often it breaks out) AND lift (how big when it does).
   const satLabel = c => {
     if (c.total < 8)       return { key: "thin",  txt: "Thin",        emoji: "⚪" };
     if (c.hitRate >= 0.35) return { key: "open",  txt: "Open window", emoji: "🟢" };
     if (c.hitRate >= 0.15) return { key: "warm",  txt: "Competitive", emoji: "🟡" };
-    if (c.avgO    >= 3)    return { key: "hivar", txt: "High-payoff", emoji: "🟠" }; // crowded but breakouts are big
-    return                        { key: "sat",   txt: "Saturated",   emoji: "🔴" }; // crowded + weak → avoid
+    if (c.avgO    >= 3)    return { key: "hivar", txt: "High-payoff", emoji: "🟠" };
+    return                        { key: "sat",   txt: "Saturated",   emoji: "🔴" };
+  };
+  // Confidence folds BOTH sample size and channel concentration — a theme carried by one
+  // channel is not a market signal no matter how many videos it has.
+  const confOf = c => {
+    if (c.n < 5 || c.topShare > 0.5)  return { key: "low",  txt: "Low"  };
+    if (c.n < 8 || c.topShare > 0.35) return { key: "med",  txt: "Med"  };
+    return                                   { key: "high", txt: "High" };
   };
 
   const all = Object.values(groups).map(g => {
     const cur = pack(g.cur), prev = pack(g.prev);
-    return { label: g.label, cur, prev, dN: cur.n - prev.n, sat: satLabel(cur) };
+    return { label: g.label, cur, prev, dN: cur.n - prev.n, sat: satLabel(cur), conf: confOf(cur) };
   }).filter(g => g.cur.total > 0 || g.prev.total > 0)
     .sort((a, b) => (b.cur.n - a.cur.n) || (b.cur.total - a.cur.total));
 
@@ -1640,26 +1689,36 @@ function computeNarrativeWoW(rows) {
 function renderWoWPanel(wow) {
   if (!wow.all.length) return "";
   const arrow = g => g.dN > 0 ? "📈" : (g.dN < 0 && g.prev.n > 0) ? "📉" : "▪️";
-  const rows = wow.all.map(g => {
-    const cls = g.dN > 0 ? "up" : (g.dN < 0 && g.prev.n > 0) ? "down" : "";
+  const cards = wow.all.map(g => {
+    const c = g.cur, cls = g.dN > 0 ? "up" : (g.dN < 0 && g.prev.n > 0) ? "down" : "";
     const d = g.dN === 0 ? "±0" : (g.dN > 0 ? "+" : "") + g.dN;
-    const c = g.cur;
-    const hitPct = (c.hitRate * 100).toFixed(0);
+    const hit = (c.hitRate * 100).toFixed(0);
+    const top = (c.topShare * 100).toFixed(0);
+    const small = c.cTotal > 0
+      ? `small hit <b>${(c.creatorHit * 100).toFixed(0)}%</b> · lift ${c.creatorLift.toFixed(1)}x${c.bN ? ` <span class="wow-prev">vs big ${c.bigLift.toFixed(1)}x</span>` : ""}`
+      : `<span class="wow-prev">no &lt;300K videos</span>`;
     return `
-      <div class="wow-row ${cls}">
-        <span class="wow-arrow">${arrow(g)}</span>
-        <span class="wow-label">${escapeHtml(g.label)}</span>
-        <span class="wow-sat sat-${g.sat.key}" title="${g.sat.txt} — outlier hit-rate ${hitPct}% (${c.n} of ${c.total})">${g.sat.emoji} ${g.sat.txt}</span>
-        <span class="wow-metrics">lift <b>${c.avgO.toFixed(1)}x</b> · hit <b>${hitPct}%</b> <span class="wow-prev">(${c.n}/${c.total})</span> · 💬 ${c.commR.toFixed(1)}</span>
-        <span class="wow-delta ${cls}" title="outlier videos this week vs last week">${d}</span>
+      <div class="wow-card ${cls}">
+        <div class="wow-c-head">
+          <span class="wow-arrow">${arrow(g)}</span>
+          <span class="wow-label">${escapeHtml(g.label)}</span>
+          <span class="wow-sat sat-${g.sat.key}" title="${g.sat.txt} — hit-rate ${hit}% (${c.n}/${c.total})">${g.sat.emoji} ${g.sat.txt}</span>
+          <span class="wow-conf conf-${g.conf.key}" title="confidence from sample size (n=${c.n}) and channel concentration (top channel = ${top}% of outliers)">conf ${g.conf.txt}</span>
+          <span class="wow-delta ${cls}" title="outlier videos this week vs last week">${d}</span>
+        </div>
+        <div class="wow-c-metrics">
+          hit <b>${hit}%</b> (${c.n}/${c.total}) · lift <b>${c.avgO.toFixed(1)}x</b> <span class="wow-prev">med ${c.medO.toFixed(1)}</span> ·
+          <span title="distinct channels with an outlier · share of outliers from the single biggest channel (breadth)">${c.ch} ch · top <b class="${c.topShare > 0.5 ? "wow-warn" : ""}">${top}%</b></span> ·
+          💬 ${c.commR.toFixed(1)} · ${small}
+        </div>
       </div>`;
   }).join("");
   return `
     <div class="wow-panel">
-      <div class="wow-head">📊 Narrative Momentum &amp; Saturation · this week
-        <span class="wow-sub">lift = avg outlier · hit = outlier rate (saturation) · 💬 = comments/1k views · Δ = outlier videos vs last week · approx (keyword-tagged)</span>
+      <div class="wow-head">📊 Narrative Evidence · this week
+        <span class="wow-sub">hit = outlier rate (saturation) · top% = outlier share of biggest channel (breadth — high = one author, not a market) · small = &lt;300K hit/lift vs big · Δ = outlier videos vs last week · approx (keyword-tagged)</span>
       </div>
-      <div class="wow-list">${rows}</div>
+      <div class="wow-list">${cards}</div>
     </div>`;
 }
 
@@ -1693,7 +1752,10 @@ function buildWeeklyPrompt(videos, accel, clusters, insights, stats, wow) {
         const c = g.cur, p = g.prev;
         const dir = g.dN > 0 ? "RISING" : (g.dN < 0 && p.n > 0) ? "COOLING" : "flat";
         const hit = x => (x.hitRate * 100).toFixed(0);
-        return `• ${g.label} [${g.sat.txt}]: this wk ${c.n}/${c.total} outliers (hit ${hit(c)}%, lift ${c.avgO.toFixed(1)}x, ${c.ch} ch, 💬${c.commR.toFixed(1)}/1k) | last wk ${p.n}/${p.total} (hit ${hit(p)}%, lift ${p.avgO.toFixed(1)}x) | Δoutliers ${g.dN > 0 ? "+" : ""}${g.dN} → ${dir}`;
+        const smallStr = c.cTotal > 0
+          ? `small-ch hit ${(c.creatorHit * 100).toFixed(0)}% lift ${c.creatorLift.toFixed(1)}x${c.bN ? ` vs big ${c.bigLift.toFixed(1)}x` : ""}`
+          : "no <300K videos";
+        return `• ${g.label} [${g.sat.txt}, confidence=${g.conf.txt}]: this wk ${c.n}/${c.total} outliers (hit ${hit(c)}%, lift ${c.avgO.toFixed(1)}x med ${c.medO.toFixed(1)}, ${c.ch} ch, top-channel ${(c.topShare * 100).toFixed(0)}% of outliers, 💬${c.commR.toFixed(1)}/1k, ${smallStr}) | last wk ${p.n}/${p.total} (hit ${hit(p)}%, lift ${p.avgO.toFixed(1)}x) | Δoutliers ${g.dN > 0 ? "+" : ""}${g.dN} → ${dir}`;
       }).join("\n")
     : "Not enough data for a week-over-week comparison yet.";
 
@@ -1719,13 +1781,17 @@ ${"═".repeat(65)}
 ${insightCtx}
 
 ${"═".repeat(65)}
-NARRATIVE MOMENTUM & SATURATION — WEEK OVER WEEK (hard evidence for sections 2 & 6)
+NARRATIVE EVIDENCE — WEEK OVER WEEK (hard evidence for sections 2 & 6)
 ${"═".repeat(65)}
-How to read this — it is the "where to enter" signal:
-  • hit% = outlier videos / total videos in the theme = SATURATION. High hit% = open window (theme rewards new entries). Low hit% with many videos = crowded/overheated, avoid.
-  • lift = average outlier multiple of the breakouts. 💬 = comments per 1k views (engagement/controversy).
-  • [Open window] = enter (high hit-rate); [Competitive] = possible with a strong angle; [High-payoff] = crowded but breakouts are big (high lift, low hit-rate — needs an exceptional angle); [Saturated] = crowded + weak, avoid; [Thin] = too few videos to judge (low confidence).
-  • Tagging is keyword-based (approximate). Do not over-read a single theme.
+How to read this — it is the "where to enter" signal. Treat each theme as a CARD of evidence, not one number:
+  • hit% = outlier videos / total videos in the theme = SATURATION. High = open window (rewards entries); low + many videos = crowded, avoid.
+  • lift = avg outlier of breakouts; med = median (use median when n is small — one freak video can inflate avg).
+  • top-channel % = share of the theme's outliers from the SINGLE biggest channel = BREADTH. If >50%, the theme is one author's editorial bet, NOT a market signal — say so and lower confidence.
+  • small-ch hit/lift vs big = whether <300K creators (your ICP) actually win this theme. If small-ch lift ≥ big lift, it's a real creator opportunity.
+  • 💬 = comments per 1k views (engagement/controversy).
+  • confidence is given per theme — it already folds in sample size AND concentration. NEVER state High when confidence=Low.
+  • Labels: [Open window] enter · [Competitive] needs a strong angle · [High-payoff] crowded but breakouts are big · [Saturated] crowded+weak, avoid · [Thin] too few to judge.
+  • Tagging is keyword-based (approximate). Do not over-read a single theme; cross-check with the video list.
 ${wowStr}
 
 ${"═".repeat(65)}
@@ -2657,13 +2723,8 @@ function generateWhyItMatters(v) {
   if (subs > 10000 && views / subs > 0.3)
     items.push(`Reached ${((views / subs) * 100).toFixed(0)}% of subscriber base — high penetration rate.`);
 
-  const t = " " + (v.title || "").toLowerCase() + " ";
-  for (const g of SIGNAL_GROUPS) {
-    if (g.keys.some(k => t.includes(k))) {
-      items.push(`📌 Narrative theme: ${g.label}`);
-      break;
-    }
-  }
+  const ng = narrativeOf(v.title);
+  if (ng) items.push(`📌 Narrative theme: ${ng.label}`);
   return items;
 }
 
