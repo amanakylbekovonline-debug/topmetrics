@@ -716,6 +716,9 @@
 
   /* Topic xViews (topic-relative performance) */
   .topic-stat { font-size: 12px; color: #8b5cf6; font-weight: 500; margin-bottom: 10px; }
+  .topic-sub { display: block; font-size: 11px; color: #666; font-weight: 400; margin-top: 4px; max-width: 680px; line-height: 1.4; }
+  .topic-sat-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; flex-wrap: wrap; }
+  .wow-sat.sat-conc { color: #c4b5fd; background: rgba(139,92,246,.1); border-color: rgba(139,92,246,.3); }
   .xviews-badge {
     position: absolute; bottom: 8px; left: 8px;
     padding: 3px 9px; border-radius: 999px;
@@ -970,7 +973,34 @@ function topicStats(cluster) {
   const vids = (cluster.video_ids || []).map(id => topicVideoMap.get(id)).filter(Boolean);
   const views = vids.map(v => v.view_count || 0).filter(x => x > 0);
   const outs  = vids.map(v => v.outlier_score).filter(x => typeof x === "number" && x > 0);
-  return { n: vids.length, medViews: median(views), medOutlier: median(outs) };
+  // top-channel concentration: a cluster carried by one author is not a market signal.
+  const chCount = new Map();
+  vids.forEach(v => {
+    const ch = v.channel_id || v.channels?.title || v.video_id;
+    chCount.set(ch, (chCount.get(ch) || 0) + 1);
+  });
+  const topShare = vids.length ? Math.max(0, ...chCount.values()) / vids.length : 0;
+  return { n: vids.length, medViews: median(views), medOutlier: median(outs), topShare, nCh: chCount.size };
+}
+// Topics saturation = RELATIVE read WITHIN an AI cluster (a pre-elevated set, observed floor
+// outlier ≈1.5x), NOT population saturation. The population compass is the Weekly Report's
+// Narrative Evidence Card (keyword themes, full denominator). Thresholds are calibrated to the
+// cluster med-lift range (~1.5–3.4), not to Evidence Card's full-denominator hit-rate.
+function topicSatLabel(st) {
+  if (!st || st.n < 3 || st.medOutlier == null) return { key: "thin", txt: "Thin",       emoji: "⚪" };
+  if (st.topShare >= 0.6)                        return { key: "conc", txt: "One-author",  emoji: "🟣" }; // not a market
+  const lift = st.medOutlier;
+  if (lift >= 2.5) return st.topShare < 0.4
+    ? { key: "open",  txt: "Hot",         emoji: "🟢" }   // strong lift + broad
+    : { key: "hivar", txt: "High-payoff", emoji: "🟠" };  // strong lift but concentrated
+  if (st.n >= 8 && lift < 2.2) return { key: "sat",  txt: "Crowded",  emoji: "🔴" };  // many videos, modest lift
+  if (lift < 2.0)              return { key: "warm", txt: "Soft",     emoji: "🟡" };  // weak standouts
+  return                              { key: "warm", txt: "Building", emoji: "🟡" };
+}
+function topicConf(st) {
+  if (!st || st.n < 4 || st.topShare > 0.6) return { key: "low",  txt: "Low"  };
+  if (st.n < 8 || st.topShare > 0.4)        return { key: "med",  txt: "Med"  };
+  return                                           { key: "high", txt: "High" };
 }
 function xViews(v, st) {
   if (!st || !st.medOutlier) return null;
@@ -1511,7 +1541,9 @@ function renderClusters(week) {
 
   const head = `
     <div class="topics-head">
-      <div class="stats">${currentClusters.length} themes · top outliers of the week</div>
+      <div class="stats">${currentClusters.length} themes · top outliers of the week
+        <span class="topic-sub">label = relative read within each AI cluster (median lift · volume · top-channel concentration), not population saturation — population compass lives in the Weekly Report's Narrative Evidence card</span>
+      </div>
       <select class="week-select" id="weekSelect">${options}</select>
     </div>`;
 
@@ -1527,9 +1559,18 @@ function renderClusters(week) {
       .filter(Boolean)
       .map(t => `<div>• ${escapeHtml(t)}</div>`).join("");
     const st = topicStats(c);
-    const statLine = st.medViews != null
-      ? `<div class="topic-stat">Typical ${fmt(Math.round(st.medViews))} views${st.medOutlier != null ? ` · ${st.medOutlier.toFixed(1)}× median lift` : ""} · ${st.n} videos</div>`
-      : "";
+    let statLine = "";
+    if (st.medOutlier != null) {
+      const sat = topicSatLabel(st), conf = topicConf(st), top = Math.round(st.topShare * 100);
+      statLine = `
+        <div class="topic-sat-row">
+          <span class="wow-sat sat-${sat.key}" title="${sat.txt} — relative read within this AI cluster (a pre-elevated set), not population saturation">${sat.emoji} ${sat.txt}</span>
+          <span class="wow-conf conf-${conf.key}" title="confidence from cluster size (n=${st.n}) and top-channel concentration (${top}%)">conf ${conf.txt}</span>
+        </div>
+        <div class="topic-stat">${st.medOutlier.toFixed(1)}× median lift · ${st.n} videos · top ch ${top}%${st.medViews != null ? ` · typ. ${fmt(Math.round(st.medViews))} views` : ""}</div>`;
+    } else if (st.medViews != null) {
+      statLine = `<div class="topic-stat">Typical ${fmt(Math.round(st.medViews))} views · ${st.n} videos</div>`;
+    }
     return `
       <div class="cluster-card" data-cluster="${i}">
         <h3>${escapeHtml(c.label)} <span class="cluster-count">${c.video_count}</span></h3>
@@ -1561,9 +1602,18 @@ function openCluster(idx) {
     vids.sort((a, b) => (b.outlier_score || 0) - (a.outlier_score || 0));
   }
 
-  const baseline = st.medViews != null
-    ? `<div class="topic-baseline">Topic baseline: ${fmt(Math.round(st.medViews))} median views${st.medOutlier != null ? ` · ${st.medOutlier.toFixed(1)}× median outlier` : ""} (${st.n} videos)</div>`
-    : "";
+  let baseline = "";
+  if (st.medOutlier != null) {
+    const sat = topicSatLabel(st), conf = topicConf(st), top = Math.round(st.topShare * 100);
+    baseline = `
+      <div class="topic-baseline">
+        <span class="wow-sat sat-${sat.key}" title="relative read within this AI cluster (a pre-elevated set), not population saturation — population compass is the Weekly Report's Narrative Evidence card">${sat.emoji} ${sat.txt}</span>
+        <span class="wow-conf conf-${conf.key}" title="confidence from cluster size (n=${st.n}) and top-channel concentration (${top}%)">conf ${conf.txt}</span>
+        &nbsp;${st.medOutlier.toFixed(1)}× median lift · ${st.n} videos · top channel ${top}%${st.medViews != null ? ` · typ. ${fmt(Math.round(st.medViews))} median views` : ""}
+      </div>`;
+  } else if (st.medViews != null) {
+    baseline = `<div class="topic-baseline">Typical ${fmt(Math.round(st.medViews))} median views (${st.n} videos)</div>`;
+  }
   const sortBar = st.medOutlier != null
     ? `<div class="topic-sort">
          <button data-sort="outlier" class="${topicSort === "outlier" ? "active" : ""}">Sort: Outlier</button>
