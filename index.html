@@ -186,6 +186,9 @@
   /* Dim — EQS */
   .metrics .m-dim { color: #444; }
   .metrics .m-dim span { font-size: 12px; color: #555; font-weight: 400; }
+  /* Engagement — 5th axis, full-width row: comments/1k + likes% */
+  .metrics .m-eng { grid-column: 1 / -1; flex-direction: row; align-items: baseline; gap: 6px; color: #6b7280; }
+  .metrics .m-eng span { font-size: 12px; color: #9ca3af; font-weight: 500; }
 
   .empty, .loading {
     text-align: center; color: #555; padding: 80px 20px;
@@ -719,6 +722,43 @@
   .topic-sub { display: block; font-size: 11px; color: #666; font-weight: 400; margin-top: 4px; max-width: 680px; line-height: 1.4; }
   .topic-sat-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; flex-wrap: wrap; }
   .wow-sat.sat-conc { color: #c4b5fd; background: rgba(139,92,246,.1); border-color: rgba(139,92,246,.3); }
+
+  /* Recommendations / north-star */
+  .ns-panel { border: 1px solid #2a2a2a; border-radius: 12px; padding: 14px 16px; margin-bottom: 18px; background: #121212; }
+  .ns-head { font-size: 14px; font-weight: 600; color: #e5e5e5; margin-bottom: 12px; }
+  .ns-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .ns-card { border: 1px solid #2a2a2a; border-radius: 10px; padding: 12px; background: #161616; text-align: center; }
+  .ns-card.good { border-color: rgba(34,197,94,.4); }
+  .ns-card.mid  { border-color: rgba(245,158,11,.35); }
+  .ns-card.low  { border-color: rgba(239,68,68,.35); }
+  .ns-h { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #888; }
+  .ns-v { font-size: 28px; font-weight: 700; color: #e5e5e5; margin: 2px 0; }
+  .ns-card.good .ns-v { color: #6ee7b7; }
+  .ns-card.mid  .ns-v { color: #fcd34d; }
+  .ns-card.low  .ns-v { color: #fca5a5; }
+  .ns-sub { font-size: 11px; color: #777; }
+  .reco-card { border: 1px solid #2a2a2a; border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; background: #141414; }
+  .reco-head { display: flex; gap: 8px; align-items: center; }
+  .reco-idea { color: #e5e5e5; font-weight: 500; flex: 1; }
+  .reco-theme { font-size: 11px; color: #a78bfa; background: rgba(139,92,246,.1); border: 1px solid rgba(139,92,246,.25); border-radius: 999px; padding: 2px 8px; }
+  .reco-status { font-size: 11px; font-weight: 600; border-radius: 999px; padding: 2px 8px; text-transform: uppercase; letter-spacing: .03em; }
+  .reco-status.st-open      { color: #93c5fd; background: rgba(59,130,246,.1); border: 1px solid rgba(59,130,246,.3); }
+  .reco-status.st-published { color: #6ee7b7; background: rgba(34,197,94,.1);  border: 1px solid rgba(34,197,94,.3); }
+  .reco-status.st-dropped   { color: #777;    background: #1a1a1a;             border: 1px solid #2a2a2a; }
+  .reco-outcome { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .reco-chip { font-size: 12px; font-weight: 600; border-radius: 7px; padding: 3px 9px; border: 1px solid #2a2a2a; }
+  .reco-chip.reco-hit     { color: #6ee7b7; background: rgba(34,197,94,.12); border-color: rgba(34,197,94,.35); }
+  .reco-chip.reco-miss    { color: #fca5a5; background: rgba(239,68,68,.1);  border-color: rgba(239,68,68,.3); }
+  .reco-chip.reco-pending { color: #fcd34d; background: rgba(245,158,11,.08); border-color: rgba(245,158,11,.25); }
+  .reco-chip.reco-na      { color: #666;    background: #181818; }
+  .reco-meta { font-size: 12px; color: #888; margin-top: 8px; }
+  .reco-meta a { color: #8b5cf6; text-decoration: none; }
+  .reco-link-row { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .reco-link-input { flex: 1; min-width: 220px; background: #0e0e0e; border: 1px solid #2a2a2a; color: #e5e5e5; border-radius: 7px; padding: 6px 10px; font-size: 13px; }
+  .reco-mini { background: #1a1a1a; border: 1px solid #2a2a2a; color: #aaa; border-radius: 7px; padding: 5px 12px; font-size: 12px; cursor: pointer; }
+  .reco-mini.link { color: #6ee7b7; border-color: rgba(34,197,94,.3); }
+  .reco-mini:hover { background: #222; }
+  .reco-notes { font-size: 12px; color: #999; margin-top: 8px; border-top: 1px solid #1f1f1f; padding-top: 8px; }
   .xviews-badge {
     position: absolute; bottom: 8px; left: 8px;
     padding: 3px 9px; border-radius: 999px;
@@ -776,6 +816,7 @@
     <div class="nav-item" data-page="topics"><span class="nav-icon">📊</span> Topics</div>
     <div class="nav-item" data-page="velocity"><span class="nav-icon">📈</span> Velocity</div>
     <div class="nav-item" data-page="eqs"><span class="nav-icon">🎯</span> EQS Leaders</div>
+    <div class="nav-item" data-page="recos"><span class="nav-icon">🧭</span> Recommendations</div>
   </div>
 
   <div class="nav-section">
@@ -825,6 +866,7 @@
           <option value="eqs">EQS</option>
           <option value="vph">VPH</option>
           <option value="view_count">Views</option>
+          <option value="engagement">Engagement 💬</option>
           <option value="published_at">Newest</option>
         </select>
       </div>
@@ -873,6 +915,10 @@
 
   <section class="page" id="page-velocity">
     <div id="velocityContent"><div class="loading">Loading velocity data...</div></div>
+  </section>
+
+  <section class="page" id="page-recos">
+    <div id="recosContent"><div class="loading">Loading recommendations...</div></div>
   </section>
 
   <section class="page" id="page-channels">
@@ -930,6 +976,7 @@ const PAGES = {
   topics:   { title: "Topics",      showFilters: false },
   velocity: { title: "Velocity",    showFilters: false },
   eqs:      { title: "EQS Leaders", showFilters: true, defaultSort: "eqs", defaultMinViews: 10000 },
+  recos:    { title: "Recommendations", showFilters: false },
   channels: { title: "Channels",    showFilters: false }
 };
 
@@ -1057,12 +1104,20 @@ function sigClass(score) {
   if (score >= 3)  return "sig-moderate";
   return "sig-low";
 }
+// Engagement axis: comments per 1,000 views — discussion/controversy not captured by EQS.
+function commentsPer1k(v) {
+  const views = v.view_count || 0;
+  return views > 0 ? (v.comment_count || 0) / views * 1000 : 0;
+}
 function cardHTML(v, opts = {}) {
   const subs = v.channels?.subscriber_count || 0;
   const tag = sizeTag(subs);
   const inLib = isInLibrary(v.video_id);
   const score = v.outlier_score || 0;
   const ntag = narrativeTag(v);
+  const views = v.view_count || 0;
+  const cp1k = views > 0 ? (v.comment_count || 0) / views * 1000 : 0;
+  const likePct = views > 0 ? (v.like_count || 0) / views * 100 : 0;
   return `
   <a class="card" href="https://youtube.com/watch?v=${encodeURIComponent(v.video_id)}" target="_blank" rel="noopener" data-id="${v.video_id}">
     <div class="thumb">
@@ -1081,6 +1136,7 @@ function cardHTML(v, opts = {}) {
         <div class="m-secondary">Views<span>${fmt(v.view_count||0)}</span></div>
         <div class="m-primary">Outlier<span>${score.toFixed(1)}x</span></div>
         <div class="m-dim" title="Engagement Quality Score — durability of attention. Low = thumbnail-driven spike that won't repeat. High = real, lasting interest.">EQS<span>${(v.eqs||0).toFixed(2)}</span></div>
+        <div class="m-eng" title="Engagement NOT captured by EQS — 💬 comments per 1,000 views (discussion / controversy proxy) · 👍 likes as % of views">Engagement<span>💬 ${cp1k.toFixed(1)}/1k · 👍 ${likePct.toFixed(1)}%</span></div>
       </div>
     </div>
   </a>`;
@@ -1216,6 +1272,10 @@ function render() {
     return true;
   });
 
+  if (sortEl.value === "engagement") {
+    filtered.sort((a, b) => commentsPer1k(b) - commentsPer1k(a));
+  }
+
   filtered.forEach(v => renderedVideos.set(v.video_id, v));
 
   stats.textContent = `${filtered.length} videos`;
@@ -1231,10 +1291,13 @@ function render() {
 async function loadVideos() {
   grid.innerHTML = skeletonHTML();
 
+  // "engagement" is a computed ratio (no such column) — fetch the most-commented pool
+  // server-side, then re-rank client-side by comments/1k in render().
+  const orderCol = sortEl.value === "engagement" ? "comment_count" : sortEl.value;
   let query = supabase
     .from("videos")
     .select("*, channels(title, subscriber_count)")
-    .order(sortEl.value, { ascending: false })
+    .order(orderCol, { ascending: false })
     .limit(activeDays === 0 ? 600 : 300);
 
   if (activeDays > 0) {
@@ -2739,6 +2802,282 @@ function wireArchive() {
   }
 }
 
+/* ---------- Recommendations (north-star outcome tracking) ---------- */
+// Each row is one recommended idea. When the targeted creator publishes a video for it,
+// LINK the tracked video_id → we snapshot the channel baseline (channels.avg_views) + the
+// publish date. Outcome is then measured live from video_history at 7/14/30d: a "hit" =
+// views(day-N) / baseline ≥ 1.5 — exactly the north-star (and = outlier_score, since
+// outlier_score = view_count / avg_views). Outcome is derived on read, never stored.
+const RECO_HORIZONS = [7, 14, 30];
+const RECO_HIT = 1.5;
+let recoRows = [];
+let recoHistory = new Map();      // video_id → [{captured_at, view_count}] ascending
+let recoComposeOpen = false;
+
+async function loadRecommendations() {
+  const content = $("recosContent");
+  content.innerHTML = '<div class="loading">Loading recommendations...</div>';
+
+  const { data, error } = await supabase
+    .from("recommendations")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) {
+    content.innerHTML = `<div class="empty">Error: ${escapeHtml(error.message)}
+      <div class="topic-sub" style="margin-top:8px">If the table is missing, apply <code>migrations/add_recommendations.sql</code> in Supabase first.</div></div>`;
+    return;
+  }
+  recoRows = data || [];
+
+  // History only for linked videos — a bounded id-list query (avoids the 1000-row cap while
+  // recommendation volume is small; revisit with an RPC if published recs ever get large).
+  recoHistory = new Map();
+  const linked = [...new Set(recoRows.filter(r => r.video_id).map(r => r.video_id))];
+  if (linked.length) {
+    const { data: hist } = await supabase
+      .from("video_history")
+      .select("video_id, captured_at, view_count")
+      .in("video_id", linked)
+      .order("captured_at", { ascending: true });
+    (hist || []).forEach(h => {
+      if (!recoHistory.has(h.video_id)) recoHistory.set(h.video_id, []);
+      recoHistory.get(h.video_id).push(h);
+    });
+  }
+  renderRecommendations();
+}
+
+// Per-horizon outcome for one published recommendation.
+function recoOutcome(r) {
+  const out = {};
+  const anchor = r.published_at ? new Date(r.published_at).getTime() : null;
+  const baseline = r.baseline_views || 0;
+  const snaps = recoHistory.get(r.video_id) || [];
+  for (const h of RECO_HORIZONS) {
+    const key = "d" + h;
+    if (r.status !== "published" || !anchor || !baseline) { out[key] = { state: "na" }; continue; }
+    if ((Date.now() - anchor) / 86400000 < h) { out[key] = { state: "pending" }; continue; }
+    const target = anchor + h * 86400000;
+    let best = null, bestDist = Infinity;
+    for (const s of snaps) {
+      const d = Math.abs(new Date(s.captured_at).getTime() - target);
+      if (d < bestDist) { bestDist = d; best = s; }
+    }
+    if (!best) { out[key] = { state: "pending" }; continue; }
+    const ratio = best.view_count / baseline;
+    out[key] = { state: ratio >= RECO_HIT ? "hit" : "miss", ratio, views: best.view_count };
+  }
+  return out;
+}
+
+// North-star: hit-rate at each horizon across MATURED published recommendations.
+function recoSummary() {
+  const sum = {};
+  RECO_HORIZONS.forEach(h => sum["d" + h] = { hit: 0, n: 0 });
+  for (const r of recoRows.filter(r => r.status === "published")) {
+    const o = recoOutcome(r);
+    RECO_HORIZONS.forEach(h => {
+      const c = o["d" + h];
+      if (c.state === "hit" || c.state === "miss") { sum["d" + h].n++; if (c.state === "hit") sum["d" + h].hit++; }
+    });
+  }
+  return sum;
+}
+
+function recoOutcomeChips(r) {
+  const o = recoOutcome(r);
+  return RECO_HORIZONS.map(h => {
+    const c = o["d" + h];
+    const cls = c.state === "hit" ? "hit" : c.state === "miss" ? "miss" : c.state === "pending" ? "pending" : "na";
+    const val = (c.state === "hit" || c.state === "miss") ? ` ${c.ratio.toFixed(2)}×` : c.state === "pending" ? " ⏳" : " —";
+    const tip = (c.state === "hit" || c.state === "miss")
+      ? `${fmt(c.views)} views by day ${h} vs baseline ${fmt(r.baseline_views)} = ${c.ratio.toFixed(2)}× (hit ≥ ${RECO_HIT}×)`
+      : c.state === "pending" ? `not yet matured (needs ${h} days since publish)` : "link a published video to measure";
+    return `<span class="reco-chip reco-${cls}" title="${tip}">d${h}${val}</span>`;
+  }).join("");
+}
+
+function parseVideoId(raw) {
+  const s = (raw || "").trim();
+  const m = s.match(/(?:v=|youtu\.be\/|\/shorts\/|\/embed\/)([\w-]{11})/) || s.match(/^([\w-]{11})$/);
+  return m ? m[1] : null;
+}
+
+function renderRecommendations() {
+  const content = $("recosContent");
+  const sum = recoSummary();
+  const counts = {
+    open: recoRows.filter(r => r.status === "open").length,
+    published: recoRows.filter(r => r.status === "published").length,
+    dropped: recoRows.filter(r => r.status === "dropped").length,
+  };
+
+  const nsCards = RECO_HORIZONS.map(h => {
+    const s = sum["d" + h];
+    const pct = s.n ? Math.round(s.hit / s.n * 100) : null;
+    const cls = pct == null ? "" : pct >= 50 ? "good" : pct >= 25 ? "mid" : "low";
+    return `<div class="ns-card ${cls}">
+      <div class="ns-h">day ${h}</div>
+      <div class="ns-v">${pct == null ? "—" : pct + "%"}</div>
+      <div class="ns-sub">${s.hit}/${s.n} beat baseline ×${RECO_HIT}</div>
+    </div>`;
+  }).join("");
+
+  const rows = recoRows.length ? recoRows.map(r => {
+    const statusChip = `<span class="reco-status st-${r.status}">${r.status}</span>`;
+    let body = "";
+    if (r.status === "published") {
+      body = `
+        <div class="reco-outcome">${recoOutcomeChips(r)}</div>
+        <div class="reco-meta">
+          ${r.target_channel_id ? `<b>${escapeHtml(r.target_channel_id)}</b> · ` : ""}baseline ${fmt(r.baseline_views || 0)} ·
+          <a href="https://youtu.be/${encodeURIComponent(r.video_id)}" target="_blank" rel="noopener">video ↗</a> ·
+          published ${r.published_at ? ago(r.published_at) : "—"}
+          <button class="reco-mini" data-unlink="${r.id}">unlink</button>
+        </div>`;
+    } else if (r.status === "open") {
+      body = `
+        <div class="reco-link-row">
+          <input class="reco-link-input" data-linkinput="${r.id}" placeholder="Paste published video URL or 11-char ID (must be a tracked channel)"/>
+          <button class="reco-mini link" data-link="${r.id}">Link video</button>
+          <button class="reco-mini" data-drop="${r.id}">Drop</button>
+        </div>`;
+    } else {
+      body = `<div class="reco-meta"><button class="reco-mini" data-reopen="${r.id}">Reopen</button></div>`;
+    }
+    return `
+      <div class="reco-card" data-id="${r.id}">
+        <div class="reco-head">
+          ${statusChip}
+          ${r.theme ? `<span class="reco-theme">${escapeHtml(r.theme)}</span>` : ""}
+          <span class="reco-idea">${escapeHtml(r.idea)}</span>
+          <button class="rc-del" data-del="${r.id}" title="Delete recommendation">×</button>
+        </div>
+        ${body}
+        ${r.notes ? `<div class="reco-notes">${escapeHtml(r.notes)}</div>` : ""}
+      </div>`;
+  }).join("") : '<div class="empty">No recommendations yet. Add the ideas you put in a report, then link the video once the creator publishes — outcomes appear at 7/14/30 days.</div>';
+
+  content.innerHTML = `
+    <div class="ns-panel">
+      <div class="ns-head">🧭 North-star · share of recommendations that beat the channel baseline ×${RECO_HIT}
+        <span class="topic-sub">measured live from video_history at each horizon · only matured, linked recommendations count toward the rate</span>
+      </div>
+      <div class="ns-grid">${nsCards}</div>
+    </div>
+
+    <div class="archive-head">
+      <div class="stats">🧭 ${counts.open} open · ${counts.published} published · ${counts.dropped} dropped</div>
+      <button class="ac-save" id="recoNewBtn">＋ New recommendation</button>
+    </div>
+
+    <div class="archive-compose ${recoComposeOpen ? "" : "hidden"}" id="recoCompose">
+      <div class="ac-row">
+        <input type="text" class="ac-title" id="recoTheme" placeholder="Theme / cluster (optional)"/>
+      </div>
+      <textarea class="ac-body" id="recoIdea" placeholder="The recommended idea — what to shoot..."></textarea>
+      <input type="text" class="ac-title" id="recoNotes" placeholder="Notes (optional)"/>
+      <div class="ac-actions">
+        <button class="ac-save" id="recoSaveBtn">Save recommendation</button>
+        <button class="ac-cancel" id="recoCancelBtn">Cancel</button>
+      </div>
+    </div>
+
+    <div id="recoList">${rows}</div>`;
+
+  wireRecommendations();
+}
+
+function wireRecommendations() {
+  $("recoNewBtn").addEventListener("click", () => {
+    recoComposeOpen = true;
+    $("recoCompose").classList.remove("hidden");
+    $("recoIdea").focus();
+  });
+  $("recoCancelBtn")?.addEventListener("click", () => {
+    recoComposeOpen = false;
+    $("recoCompose").classList.add("hidden");
+  });
+  $("recoSaveBtn")?.addEventListener("click", async () => {
+    const idea = $("recoIdea").value.trim();
+    if (!idea) { $("recoIdea").focus(); return; }
+    const btn = $("recoSaveBtn");
+    btn.disabled = true; btn.textContent = "Saving...";
+    const { error } = await supabase.from("recommendations").insert({
+      idea,
+      theme: $("recoTheme").value.trim(),
+      notes: $("recoNotes").value.trim(),
+      status: "open",
+    });
+    if (error) { btn.disabled = false; btn.textContent = "Save recommendation"; alert("Save failed: " + error.message); return; }
+    recoComposeOpen = false;
+    await loadRecommendations();
+  });
+
+  const list = $("recoList");
+  list.addEventListener("click", async e => {
+    const t = e.target;
+    const id = t.dataset.del || t.dataset.link || t.dataset.drop || t.dataset.reopen || t.dataset.unlink;
+    if (!id) return;
+
+    if (t.dataset.del) {
+      if (!confirm("Delete this recommendation? This cannot be undone.")) return;
+      const { error } = await supabase.from("recommendations").delete().eq("id", id);
+      if (error) { alert("Delete failed: " + error.message); return; }
+      recoRows = recoRows.filter(r => String(r.id) !== String(id));
+      renderRecommendations();
+      return;
+    }
+    if (t.dataset.drop || t.dataset.reopen) {
+      const status = t.dataset.drop ? "dropped" : "open";
+      const { error } = await supabase.from("recommendations").update({ status, updated_at: new Date().toISOString() }).eq("id", id);
+      if (error) { alert("Update failed: " + error.message); return; }
+      await loadRecommendations();
+      return;
+    }
+    if (t.dataset.unlink) {
+      const { error } = await supabase.from("recommendations")
+        .update({ status: "open", video_id: null, baseline_views: null, published_at: null, target_channel_id: null, updated_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) { alert("Unlink failed: " + error.message); return; }
+      await loadRecommendations();
+      return;
+    }
+    if (t.dataset.link) {
+      const input = list.querySelector(`[data-linkinput="${id}"]`);
+      const vid = parseVideoId(input?.value);
+      if (!vid) { alert("Could not read a video ID. Paste a YouTube URL or the 11-character ID."); return; }
+      t.disabled = true; t.textContent = "Linking...";
+      const { data: v, error } = await supabase
+        .from("videos")
+        .select("video_id, published_at, channel_id, channels(title, avg_views)")
+        .eq("video_id", vid)
+        .maybeSingle();
+      if (error || !v) {
+        t.disabled = false; t.textContent = "Link video";
+        alert(v ? ("Lookup failed: " + error.message) : "That video isn't tracked. Add its channel first (Channels page) so outcomes can be measured.");
+        return;
+      }
+      const baseline = Math.round(v.channels?.avg_views || 0);
+      const { error: uErr } = await supabase.from("recommendations").update({
+        status: "published",
+        video_id: v.video_id,
+        published_at: v.published_at,
+        baseline_views: baseline,
+        target_channel_id: v.channels?.title || v.channel_id,
+        updated_at: new Date().toISOString(),
+      }).eq("id", id);
+      if (uErr) { t.disabled = false; t.textContent = "Link video"; alert("Link failed: " + uErr.message); return; }
+      await loadRecommendations();
+      return;
+    }
+  });
+
+  // don't let an Enter in the link field reload the page
+  list.querySelectorAll("[data-linkinput]").forEach(inp =>
+    inp.addEventListener("keydown", e => { if (e.key === "Enter") list.querySelector(`[data-link="${inp.dataset.linkinput}"]`)?.click(); }));
+}
+
 /* ---------- Side Panel ---------- */
 let currentPanelId  = null;
 let notesDebounce   = null;
@@ -2996,6 +3335,9 @@ function switchPage(pageId) {
   } else if (pageId === "velocity") {
     $("page-velocity").classList.add("active");
     loadVelocity();
+  } else if (pageId === "recos") {
+    $("page-recos").classList.add("active");
+    loadRecommendations();
   } else if (pageId === "channels") {
     $("page-channels").classList.add("active");
     loadChannels();
