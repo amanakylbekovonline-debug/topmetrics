@@ -801,27 +801,27 @@
   <div class="logo">TubeMetrics <span>Finance</span></div>
 
   <div class="nav-section">
-    <div class="nav-section-title">Discover</div>
-    <div class="nav-item" data-page="radar"><span class="nav-icon">📡</span> Daily Radar</div>
-    <div class="nav-item active" data-page="outliers"><span class="nav-icon">🔥</span> Outliers</div>
-    <div class="nav-item" data-page="recent"><span class="nav-icon">📅</span> Recent</div>
-    <div class="nav-item" data-page="saved"><span class="nav-icon">📚</span> Report Library</div>
-    <div class="nav-item" data-page="archive"><span class="nav-icon">🗂️</span> Report Archive</div>
-    <div class="nav-item" data-page="insights"><span class="nav-icon">🤖</span> AI Insights</div>
+    <div class="nav-section-title">Обзор</div>
+    <div class="nav-item" data-page="radar"><span class="nav-icon">📡</span> Дневной радар</div>
+    <div class="nav-item active" data-page="outliers"><span class="nav-icon">🔥</span> Аутлайеры</div>
+    <div class="nav-item" data-page="recent"><span class="nav-icon">📅</span> Свежие</div>
+    <div class="nav-item" data-page="saved"><span class="nav-icon">📚</span> Библиотека отчётов</div>
+    <div class="nav-item" data-page="archive"><span class="nav-icon">🗂️</span> Архив отчётов</div>
+    <div class="nav-item" data-page="insights"><span class="nav-icon">🤖</span> AI-инсайты</div>
   </div>
 
   <div class="nav-section">
-    <div class="nav-section-title">Analyze</div>
-    <div class="nav-item" data-page="report"><span class="nav-icon">📝</span> Weekly Report</div>
-    <div class="nav-item" data-page="topics"><span class="nav-icon">📊</span> Topics</div>
-    <div class="nav-item" data-page="velocity"><span class="nav-icon">📈</span> Velocity</div>
-    <div class="nav-item" data-page="eqs"><span class="nav-icon">🎯</span> EQS Leaders</div>
-    <div class="nav-item" data-page="recos"><span class="nav-icon">🧭</span> Recommendations</div>
+    <div class="nav-section-title">Анализ</div>
+    <div class="nav-item" data-page="report"><span class="nav-icon">📝</span> Недельный отчёт</div>
+    <div class="nav-item" data-page="topics"><span class="nav-icon">📊</span> Темы</div>
+    <div class="nav-item" data-page="velocity"><span class="nav-icon">📈</span> Динамика</div>
+    <div class="nav-item" data-page="eqs"><span class="nav-icon">🎯</span> Лидеры EQS</div>
+    <div class="nav-item" data-page="recos"><span class="nav-icon">🧭</span> Рекомендации</div>
   </div>
 
   <div class="nav-section">
-    <div class="nav-section-title">Settings</div>
-    <div class="nav-item" data-page="channels"><span class="nav-icon">⚙️</span> Channels</div>
+    <div class="nav-section-title">Настройки</div>
+    <div class="nav-item" data-page="channels"><span class="nav-icon">⚙️</span> Каналы</div>
   </div>
 </aside>
 
@@ -829,69 +829,69 @@
   <div class="topbar">
     <div class="topbar-left">
       <button class="hamburger" id="hamburger">☰</button>
-      <h2 id="pageTitle">Outliers</h2>
+      <h2 id="pageTitle">Аутлайеры</h2>
     </div>
     <div class="filters" id="filters">
       <div class="filter-group">
-        <span class="filter-label">Time</span>
+        <span class="filter-label">Период</span>
         <div class="date-tabs">
-          <button class="date-tab" data-days="1">24h</button>
-          <button class="date-tab" data-days="7">7d</button>
-          <button class="date-tab active" data-days="30">30d</button>
-          <button class="date-tab" data-days="0">All</button>
+          <button class="date-tab" data-days="1">24ч</button>
+          <button class="date-tab" data-days="7">7д</button>
+          <button class="date-tab active" data-days="30">30д</button>
+          <button class="date-tab" data-days="0">Всё</button>
         </div>
       </div>
       <div class="filter-group">
-        <span class="filter-label">Format</span>
+        <span class="filter-label">Формат</span>
         <div class="date-tabs" id="durTabs">
-          <button class="date-tab active" data-dur="long">Long</button>
+          <button class="date-tab active" data-dur="long">Длинные</button>
           <button class="date-tab" data-dur="short">Shorts</button>
-          <button class="date-tab" data-dur="all">All</button>
+          <button class="date-tab" data-dur="all">Все</button>
         </div>
       </div>
       <div class="filter-group">
-        <span class="filter-label">Size</span>
+        <span class="filter-label">Размер</span>
         <select id="size">
-          <option value="all">All</option>
-          <option value="small">Small &lt;100K</option>
-          <option value="mid">Mid 100K–1M</option>
-          <option value="large">Large &gt;1M</option>
+          <option value="all">Все</option>
+          <option value="small">Малые &lt;100K</option>
+          <option value="mid">Средние 100K–1M</option>
+          <option value="large">Крупные &gt;1M</option>
         </select>
       </div>
       <div class="filter-group">
-        <span class="filter-label">Sort</span>
+        <span class="filter-label">Сортировка</span>
         <select id="sort">
-          <option value="outlier_score">Outlier</option>
-          <option value="confidence_score">Confidence</option>
+          <option value="outlier_score">Аутлайер</option>
+          <option value="confidence_score">Доверие</option>
           <option value="eqs">EQS</option>
           <option value="vph">VPH</option>
-          <option value="view_count">Views</option>
-          <option value="engagement">Engagement 💬</option>
-          <option value="published_at">Newest</option>
+          <option value="view_count">Просмотры</option>
+          <option value="engagement">Вовлечённость 💬</option>
+          <option value="published_at">Сначала новые</option>
         </select>
       </div>
-      <input type="number" id="minOutlier" placeholder="Min Outlier" step="0.5" min="0" style="width:110px"/>
-      <input type="number" id="minViews" placeholder="Min Views" min="0" style="width:110px"/>
-      <input type="number" id="minEqs" placeholder="Min EQS" step="0.1" min="0" style="width:90px"/>
+      <input type="number" id="minOutlier" placeholder="Мин. аутлайер" step="0.5" min="0" style="width:130px"/>
+      <input type="number" id="minViews" placeholder="Мин. просмотры" min="0" style="width:140px"/>
+      <input type="number" id="minEqs" placeholder="Мин. EQS" step="0.1" min="0" style="width:100px"/>
       <div class="search-wrap">
         <span class="search-icon">🔍</span>
-        <input type="text" id="search" placeholder="Search..."/>
+        <input type="text" id="search" placeholder="Поиск..."/>
       </div>
-      <button class="reset-btn" id="reset">Reset</button>
+      <button class="reset-btn" id="reset">Сброс</button>
     </div>
   </div>
 
   <section class="page" id="page-report">
-    <div id="reportContent"><div class="loading">Building report data...</div></div>
+    <div id="reportContent"><div class="loading">Готовим данные отчёта...</div></div>
   </section>
 
   <section class="page" id="page-radar">
-    <div id="radarContent"><div class="loading">Building radar...</div></div>
+    <div id="radarContent"><div class="loading">Строим радар...</div></div>
   </section>
 
   <section class="page active" id="page-videos">
     <div id="signalsPanel"></div>
-    <div class="stats" id="stats">Loading...</div>
+    <div class="stats" id="stats">Загрузка...</div>
     <div class="grid" id="grid"></div>
   </section>
 
@@ -906,23 +906,23 @@
   </section>
 
   <section class="page" id="page-archive">
-    <div id="archiveContent"><div class="loading">Loading reports...</div></div>
+    <div id="archiveContent"><div class="loading">Загрузка отчётов...</div></div>
   </section>
 
   <section class="page" id="page-topics">
-    <div id="topicsContent"><div class="loading">Loading topics...</div></div>
+    <div id="topicsContent"><div class="loading">Загрузка тем...</div></div>
   </section>
 
   <section class="page" id="page-velocity">
-    <div id="velocityContent"><div class="loading">Loading velocity data...</div></div>
+    <div id="velocityContent"><div class="loading">Загрузка данных динамики...</div></div>
   </section>
 
   <section class="page" id="page-recos">
-    <div id="recosContent"><div class="loading">Loading recommendations...</div></div>
+    <div id="recosContent"><div class="loading">Загрузка рекомендаций...</div></div>
   </section>
 
   <section class="page" id="page-channels">
-    <div id="channelsContent"><div class="loading">Loading channels...</div></div>
+    <div id="channelsContent"><div class="loading">Загрузка каналов...</div></div>
   </section>
 </main>
 
@@ -966,18 +966,18 @@ let currentPage = "outliers";
 const renderedVideos = new Map();
 
 const PAGES = {
-  radar:    { title: "Daily Radar",   showFilters: false },
-  report:   { title: "Weekly Report", showFilters: false },
-  outliers: { title: "Outliers",     showFilters: true,  defaultSort: "outlier_score" },
-  recent:   { title: "Recent",      showFilters: true,  defaultSort: "published_at" },
-  saved:    { title: "Report Library", showFilters: false },
-  archive:  { title: "Report Archive", showFilters: false },
-  insights: { title: "AI Insights", showFilters: false },
-  topics:   { title: "Topics",      showFilters: false },
-  velocity: { title: "Velocity",    showFilters: false },
-  eqs:      { title: "EQS Leaders", showFilters: true, defaultSort: "eqs", defaultMinViews: 10000 },
-  recos:    { title: "Recommendations", showFilters: false },
-  channels: { title: "Channels",    showFilters: false }
+  radar:    { title: "Дневной радар",   showFilters: false },
+  report:   { title: "Недельный отчёт", showFilters: false },
+  outliers: { title: "Аутлайеры",     showFilters: true,  defaultSort: "outlier_score" },
+  recent:   { title: "Свежие",      showFilters: true,  defaultSort: "published_at" },
+  saved:    { title: "Библиотека отчётов", showFilters: false },
+  archive:  { title: "Архив отчётов", showFilters: false },
+  insights: { title: "AI-инсайты", showFilters: false },
+  topics:   { title: "Темы",      showFilters: false },
+  velocity: { title: "Динамика",    showFilters: false },
+  eqs:      { title: "Лидеры EQS", showFilters: true, defaultSort: "eqs", defaultMinViews: 10000 },
+  recos:    { title: "Рекомендации", showFilters: false },
+  channels: { title: "Каналы",    showFilters: false }
 };
 
 /* ---------- helpers ---------- */
@@ -989,11 +989,11 @@ function fmt(n) {
 function ago(date) {
   const s = Math.floor((Date.now() - new Date(date)) / 1000);
   const d = Math.floor(s/86400);
-  if (d > 365) return Math.floor(d/365)+"y ago";
-  if (d > 30)  return Math.floor(d/30)+"mo ago";
-  if (d > 0)   return d+"d ago";
+  if (d > 365) return Math.floor(d/365)+" г назад";
+  if (d > 30)  return Math.floor(d/30)+" мес назад";
+  if (d > 0)   return d+" дн назад";
   const h = Math.floor(s/3600);
-  return h > 0 ? h+"h ago" : "just now";
+  return h > 0 ? h+" ч назад" : "только что";
 }
 function sizeTag(subs) {
   if (subs < 100_000) return "small";
@@ -1034,20 +1034,20 @@ function topicStats(cluster) {
 // Narrative Evidence Card (keyword themes, full denominator). Thresholds are calibrated to the
 // cluster med-lift range (~1.5–3.4), not to Evidence Card's full-denominator hit-rate.
 function topicSatLabel(st) {
-  if (!st || st.n < 3 || st.medOutlier == null) return { key: "thin", txt: "Thin",       emoji: "⚪" };
-  if (st.topShare >= 0.6)                        return { key: "conc", txt: "One-author",  emoji: "🟣" }; // not a market
+  if (!st || st.n < 3 || st.medOutlier == null) return { key: "thin", txt: "Мало данных", emoji: "⚪" };
+  if (st.topShare >= 0.6)                        return { key: "conc", txt: "Один автор",  emoji: "🟣" }; // not a market
   const lift = st.medOutlier;
   if (lift >= 2.5) return st.topShare < 0.4
-    ? { key: "open",  txt: "Hot",         emoji: "🟢" }   // strong lift + broad
-    : { key: "hivar", txt: "High-payoff", emoji: "🟠" };  // strong lift but concentrated
-  if (st.n >= 8 && lift < 2.2) return { key: "sat",  txt: "Crowded",  emoji: "🔴" };  // many videos, modest lift
-  if (lift < 2.0)              return { key: "warm", txt: "Soft",     emoji: "🟡" };  // weak standouts
-  return                              { key: "warm", txt: "Building", emoji: "🟡" };
+    ? { key: "open",  txt: "Горячо",        emoji: "🟢" }   // strong lift + broad
+    : { key: "hivar", txt: "Высокая отдача", emoji: "🟠" };  // strong lift but concentrated
+  if (st.n >= 8 && lift < 2.2) return { key: "sat",  txt: "Забито",   emoji: "🔴" };  // many videos, modest lift
+  if (lift < 2.0)              return { key: "warm", txt: "Слабо",    emoji: "🟡" };  // weak standouts
+  return                              { key: "warm", txt: "Набирает", emoji: "🟡" };
 }
 function topicConf(st) {
-  if (!st || st.n < 4 || st.topShare > 0.6) return { key: "low",  txt: "Low"  };
-  if (st.n < 8 || st.topShare > 0.4)        return { key: "med",  txt: "Med"  };
-  return                                           { key: "high", txt: "High" };
+  if (!st || st.n < 4 || st.topShare > 0.6) return { key: "low",  txt: "Низ"  };
+  if (st.n < 8 || st.topShare > 0.4)        return { key: "med",  txt: "Сред" };
+  return                                           { key: "high", txt: "Выс" };
 }
 function xViews(v, st) {
   if (!st || !st.medOutlier) return null;
@@ -1072,7 +1072,7 @@ function updateBookmarkUI(videoId) {
   const inLib = reportMap.has(videoId);
   document.querySelectorAll(`.save-btn[data-id="${CSS.escape(videoId)}"]`).forEach(b => {
     b.classList.toggle("saved", inLib);
-    b.title = inLib ? "Remove from library" : "Add to library";
+    b.title = inLib ? "Убрать из библиотеки" : "В библиотеку";
   });
 }
 
@@ -1122,8 +1122,8 @@ function cardHTML(v, opts = {}) {
   <a class="card" href="https://youtube.com/watch?v=${encodeURIComponent(v.video_id)}" target="_blank" rel="noopener" data-id="${v.video_id}">
     <div class="thumb">
       <img src="${escapeHtml(v.thumbnail_url)}" alt="" loading="lazy"/>
-      <div class="size-tag ${tag}">${fmt(subs)} subs</div>
-      <button class="save-btn ${inLib?'saved':''}" data-id="${escapeHtml(v.video_id)}" title="${inLib?'Remove from library':'Add to library'}">${bookmarkSvg()}</button>
+      <div class="size-tag ${tag}">${fmt(subs)} подп.</div>
+      <button class="save-btn ${inLib?'saved':''}" data-id="${escapeHtml(v.video_id)}" title="${inLib?'Убрать из библиотеки':'В библиотеку'}">${bookmarkSvg()}</button>
       <div class="score-badge ${sigClass(score)}">${score.toFixed(1)}x</div>
       ${opts.xviews != null ? `<div class="xviews-badge ${xvClass(opts.xviews)}" title="${escapeHtml(opts.xvTip || "")}">xV ${opts.xviews.toFixed(1)}×</div>` : ""}
     </div>
@@ -1132,11 +1132,11 @@ function cardHTML(v, opts = {}) {
       <div class="channel">${escapeHtml(v.channels?.title || "—")} · ${ago(v.published_at)}</div>
       ${ntag ? `<div class="narrative-tag">${escapeHtml(ntag)}</div>` : ""}
       <div class="metrics">
-        <div class="m-secondary">VPH<span>${fmt(v.vph||0)}/h</span></div>
-        <div class="m-secondary">Views<span>${fmt(v.view_count||0)}</span></div>
-        <div class="m-primary">Outlier<span>${score.toFixed(1)}x</span></div>
-        <div class="m-dim" title="Engagement Quality Score — durability of attention. Low = thumbnail-driven spike that won't repeat. High = real, lasting interest.">EQS<span>${(v.eqs||0).toFixed(2)}</span></div>
-        <div class="m-eng" title="Engagement NOT captured by EQS — 💬 comments per 1,000 views (discussion / controversy proxy) · 👍 likes as % of views">Engagement<span>💬 ${cp1k.toFixed(1)}/1k · 👍 ${likePct.toFixed(1)}%</span></div>
+        <div class="m-secondary">VPH<span>${fmt(v.vph||0)}/ч</span></div>
+        <div class="m-secondary">Просмотры<span>${fmt(v.view_count||0)}</span></div>
+        <div class="m-primary">Аутлайер<span>${score.toFixed(1)}x</span></div>
+        <div class="m-dim" title="Engagement Quality Score — устойчивость внимания. Низкий = всплеск ради превью, не повторится. Высокий = реальный, долгий интерес.">EQS<span>${(v.eqs||0).toFixed(2)}</span></div>
+        <div class="m-eng" title="Вовлечённость, которую НЕ ловит EQS — 💬 комментарии на 1000 просмотров (прокси обсуждения / спорности) · 👍 лайки как % от просмотров">Вовлечённость<span>💬 ${cp1k.toFixed(1)}/1к · 👍 ${likePct.toFixed(1)}%</span></div>
       </div>
     </div>
   </a>`;
@@ -1189,8 +1189,32 @@ function narrativeOf(title) {
   return null; // first matching group wins (ordered specific → broad)
 }
 
+// Russian DISPLAY labels for the narrative themes. Keep SIGNAL_GROUPS' English label/tag
+// intact (they feed the English report prompts); translate only at render time.
+const THEME_RU = {
+  retirement: { label: "Пенсия / Вывод средств", tag: "Пенсия" },
+  realestate: { label: "Недвижимость / Жильё",   tag: "Недвижимость" },
+  crypto:     { label: "Крипта",                 tag: "Крипта" },
+  gold:       { label: "Золото / Инфляция",      tag: "Золото/Инфляция" },
+  tech:       { label: "Tech / AI-акции",        tag: "Tech/AI" },
+  tax:        { label: "Налоги / IRS",           tag: "Налоги/IRS" },
+  insurance:  { label: "Страхование / Аннуитеты", tag: "Страхование" },
+  debt:       { label: "Долги / Кредиты",        tag: "Долги/Кредит" },
+  macro:      { label: "Макро / Геополитика",    tag: "Макро" },
+  income:     { label: "Доход / Подработка",     tag: "Доход" },
+  budget:     { label: "Бюджет / Сбережения",    tag: "Бюджет" },
+  stocks:     { label: "Акции / Инвестиции",     tag: "Акции" },
+};
+const themeLabelRu = g => (g && THEME_RU[g.id]?.label) || g?.label || "";
+const themeTagRu   = g => (g && THEME_RU[g.id]?.tag)   || g?.tag   || "";
+// Russian display for the WoW Evidence Card. The satLabel/confOf English txt stays intact
+// (it feeds the English buildWeeklyPrompt); translate only at render time, keyed by .key.
+const SAT_RU  = { thin: "Мало данных", open: "Открыто", warm: "Конкурентно", hivar: "Высокая отдача", sat: "Забито" };
+const CONF_RU = { low: "Низ", med: "Сред", high: "Выс" };
+const labelRuOf = engLabel => { const g = SIGNAL_GROUPS.find(x => x.label === engLabel); return g ? themeLabelRu(g) : engLabel; };
+
 function narrativeTag(v) {
-  return narrativeOf(v.title)?.tag || null;
+  return themeTagRu(narrativeOf(v.title)) || null;
 }
 
 function computeSignals(videos) {
@@ -1211,7 +1235,7 @@ function computeSignals(videos) {
   const ranked = Object.values(groups)
     .filter(g => g.vids.length > 0)
     .map(g => ({
-      label:    g.label,
+      label:    themeLabelRu(g),
       count:    g.vids.length,
       channels: g.channelSet.size,
       avgScore: g.total / g.vids.length,
@@ -1241,25 +1265,25 @@ function renderSignals({ ranked, breakout }) {
   const rows = ranked.map(s => {
     const isWave = s.channels >= 3;
     return `
-    <div class="signal-item${isWave ? " signal-wave" : ""}" title="${isWave ? "Wave: ≥3 independent channels — narrative validated" : "Single/few channels — not yet a wave"}">
+    <div class="signal-item${isWave ? " signal-wave" : ""}" title="${isWave ? "Волна: ≥3 независимых канала — нарратив подтверждён" : "Один/несколько каналов — ещё не волна"}">
       <span class="signal-icon">${icon(s.avgScore)}</span>
       <span class="signal-label">${escapeHtml(s.label)}</span>
-      <span class="signal-count">${s.count} outlier${s.count > 1 ? "s" : ""} · ${s.channels} channel${s.channels > 1 ? "s" : ""}${isWave ? " 🌊" : ""}</span>
-      <span class="signal-score">avg ${s.avgScore.toFixed(1)}x · max ${s.maxScore.toFixed(1)}x</span>
+      <span class="signal-count">${s.count} аутл. · ${s.channels} кан.${isWave ? " 🌊" : ""}</span>
+      <span class="signal-score">сред ${s.avgScore.toFixed(1)}x · макс ${s.maxScore.toFixed(1)}x</span>
     </div>`;
   }).join("");
 
   const bRow = breakout ? `
     <div class="signal-item signal-breakout">
       <span class="signal-icon">🟢</span>
-      <span class="signal-label">Small breakout: ${escapeHtml(breakout.channels?.title || "—")}</span>
+      <span class="signal-label">Прорыв малого: ${escapeHtml(breakout.channels?.title || "—")}</span>
       <span class="signal-count">${(breakout.outlier_score || 0).toFixed(1)}x</span>
-      <span class="signal-score">${fmt(breakout.channels?.subscriber_count || 0)} subs</span>
+      <span class="signal-score">${fmt(breakout.channels?.subscriber_count || 0)} подп.</span>
     </div>` : "";
 
   panel.innerHTML = `
     <div class="signals-panel">
-      <div class="signals-header">📊 Strongest signals</div>
+      <div class="signals-header">📊 Сильнейшие сигналы</div>
       <div class="signals-list">${rows}${bRow}</div>
     </div>`;
 }
@@ -1278,11 +1302,11 @@ function render() {
 
   filtered.forEach(v => renderedVideos.set(v.video_id, v));
 
-  stats.textContent = `${filtered.length} videos`;
+  stats.textContent = `${filtered.length} видео`;
   renderSignals(computeSignals(filtered));
 
   if (!filtered.length) {
-    grid.innerHTML = '<div class="empty">No videos match your filters</div>';
+    grid.innerHTML = '<div class="empty">Нет видео под ваши фильтры</div>';
     return;
   }
   grid.innerHTML = filtered.map(cardHTML).join("");
@@ -1319,7 +1343,7 @@ async function loadVideos() {
 
   const { data, error } = await query;
   if (error) {
-    grid.innerHTML = `<div class="empty">Error: ${error.message}</div>`;
+    grid.innerHTML = `<div class="empty">Ошибка: ${error.message}</div>`;
     return;
   }
   cachedData = data || [];
@@ -1328,20 +1352,20 @@ async function loadVideos() {
 
 /* ---------- Report Library ---------- */
 const STATUS_ORDER = [
-  { key: "watch_later",    label: "👀 Watch Later"      },
-  { key: "candidate",      label: "📋 Report Candidate" },
-  { key: "evidence",       label: "📊 Evidence"         },
-  { key: "title_pattern",  label: "🏷️ Title Pattern"    },
-  { key: "small_breakout", label: "🚀 Small Breakout"   },
-  { key: "used_in_report", label: "✅ Used in Report"   },
-  { key: "rejected",       label: "❌ Rejected"         },
+  { key: "watch_later",    label: "👀 Посмотреть позже"   },
+  { key: "candidate",      label: "📋 Кандидат в отчёт"  },
+  { key: "evidence",       label: "📊 Доказательство"    },
+  { key: "title_pattern",  label: "🏷️ Паттерн заголовка" },
+  { key: "small_breakout", label: "🚀 Прорыв малого"     },
+  { key: "used_in_report", label: "✅ В отчёте"          },
+  { key: "rejected",       label: "❌ Отклонено"         },
 ];
 
 let libActiveTab = "all"; // persists while page is open
 
 async function loadReportLibrary() {
   const libTabs = $("libTabs");
-  savedGrid.innerHTML = '<div class="loading">Loading library…</div>';
+  savedGrid.innerHTML = '<div class="loading">Загрузка библиотеки…</div>';
   savedStats.textContent = "";
   if (libTabs) libTabs.innerHTML = "";
 
@@ -1351,12 +1375,12 @@ async function loadReportLibrary() {
     .order("updated_at", { ascending: false });
 
   if (error) {
-    savedGrid.innerHTML = `<div class="empty">Error: ${error.message}</div>`;
+    savedGrid.innerHTML = `<div class="empty">Ошибка: ${error.message}</div>`;
     return;
   }
   if (!rows || !rows.length) {
-    savedGrid.innerHTML = '<div class="empty">Library is empty. Click the bookmark icon on any card to add a video.</div>';
-    savedStats.textContent = "0 videos";
+    savedGrid.innerHTML = '<div class="empty">Библиотека пуста. Нажмите иконку закладки на любой карточке, чтобы добавить видео.</div>';
+    savedStats.textContent = "0 видео";
     return;
   }
 
@@ -1377,7 +1401,7 @@ async function loadReportLibrary() {
   // build tabs — only for statuses that have videos
   const activeTabs = STATUS_ORDER.filter(s => (groups.get(s.key) || []).length > 0);
   if (libTabs && activeTabs.length > 1) {
-    const tabDefs = [{ key: "all", label: "All", count: totalCount }, ...activeTabs.map(s => ({ key: s.key, label: s.label, count: groups.get(s.key).length }))];
+    const tabDefs = [{ key: "all", label: "Все", count: totalCount }, ...activeTabs.map(s => ({ key: s.key, label: s.label, count: groups.get(s.key).length }))];
     libTabs.innerHTML = tabDefs.map(t => `
       <button class="lib-tab ${libActiveTab === t.key ? "active" : ""}" data-tab="${t.key}">
         ${escapeHtml(t.label)} <span class="lib-tab-count">${t.count}</span>
@@ -1415,27 +1439,27 @@ function renderLibraryContent(groups, totalCount) {
     count = vids.length;
     html = vids.length
       ? `<div class="grid" style="padding-top:16px">${vids.map(v => cardHTML(v)).join("")}</div>`
-      : '<div class="empty" style="padding-top:20px">No videos with this status.</div>';
+      : '<div class="empty" style="padding-top:20px">Нет видео с этим статусом.</div>';
   }
 
-  savedStats.textContent = `${count} video${count !== 1 ? "s" : ""}`;
+  savedStats.textContent = `${count} видео`;
   savedGrid.innerHTML = html;
 }
 
 /* ---------- Channels ---------- */
 async function loadChannels() {
-  channelsContent.innerHTML = '<div class="loading">Loading channels...</div>';
+  channelsContent.innerHTML = '<div class="loading">Загрузка каналов...</div>';
   const { data, error } = await supabase
     .from("channels")
     .select("title, subscriber_count, avg_views, avg_views_updated_at, videos(count)")
     .order("subscriber_count", { ascending: false });
 
   if (error) {
-    channelsContent.innerHTML = `<div class="empty">Error: ${error.message}</div>`;
+    channelsContent.innerHTML = `<div class="empty">Ошибка: ${error.message}</div>`;
     return;
   }
   if (!data || !data.length) {
-    channelsContent.innerHTML = '<div class="empty">No channels yet</div>';
+    channelsContent.innerHTML = '<div class="empty">Пока нет каналов</div>';
     return;
   }
 
@@ -1447,20 +1471,20 @@ async function loadChannels() {
 
   channelsContent.innerHTML = `
     <div class="add-channel">
-      <input type="text" id="addChannelInput" placeholder="Channel URL, @handle, or UC… id"/>
-      <button class="ac-save" id="addChannelBtn">Add channel</button>
+      <input type="text" id="addChannelInput" placeholder="URL канала, @handle или UC… id"/>
+      <button class="ac-save" id="addChannelBtn">Добавить канал</button>
       <span class="add-channel-status" id="addChannelStatus"></span>
     </div>
-    <div class="stats">${rows.length} channels</div>
+    <div class="stats">${rows.length} каналов</div>
     <div class="table-wrap">
       <table class="table">
         <thead>
           <tr>
-            <th>Channel</th>
-            <th style="text-align:right">Subscribers</th>
-            <th style="text-align:right">Avg Views</th>
-            <th style="text-align:right">Videos in DB</th>
-            <th style="text-align:right">Stats Updated</th>
+            <th>Канал</th>
+            <th style="text-align:right">Подписчики</th>
+            <th style="text-align:right">Сред. просмотры</th>
+            <th style="text-align:right">Видео в БД</th>
+            <th style="text-align:right">Статы обновлены</th>
           </tr>
         </thead>
         <tbody>
@@ -1491,7 +1515,7 @@ function wireAddChannel() {
   const submit = async () => {
     const raw = (input.value || "").trim();
     if (!raw) {
-      status.textContent = "Enter a channel URL, @handle, or UC… id";
+      status.textContent = "Введите URL канала, @handle или UC… id";
       status.className = "add-channel-status err";
       return;
     }
@@ -1500,29 +1524,29 @@ function wireAddChannel() {
     // UC… id present → use directly; otherwise resolve handle/URL via edge function.
     let id = extractChannelId(raw);
     if (!id) {
-      status.textContent = "Resolving…";
+      status.textContent = "Определяю…";
       status.className = "add-channel-status";
       try {
         const { data, error: rErr } = await supabase.functions.invoke("resolve-channel", { body: { handle: raw } });
         if (rErr || !data?.channel_id) {
           btn.disabled = false;
-          status.textContent = `Couldn't resolve: ${data?.error || rErr?.message || "channel not found"}`;
+          status.textContent = `Не удалось определить: ${data?.error || rErr?.message || "канал не найден"}`;
           status.className = "add-channel-status err";
           return;
         }
         id = data.channel_id;
         if (data.title) {
-          status.textContent = `Resolved “${data.title}” — adding…`;
+          status.textContent = `Определён «${data.title}» — добавляю…`;
         }
       } catch (e) {
         btn.disabled = false;
-        status.textContent = `Resolve failed: ${e.message}`;
+        status.textContent = `Ошибка определения: ${e.message}`;
         status.className = "add-channel-status err";
         return;
       }
     }
 
-    if (status.textContent === "Resolving…") status.textContent = "Adding…";
+    if (status.textContent === "Определяю…") status.textContent = "Добавляю…";
     status.className = "add-channel-status";
     const { error } = await supabase
       .from("channels")
@@ -1530,15 +1554,15 @@ function wireAddChannel() {
     btn.disabled = false;
     if (error) {
       if (error.code === "23505" || /duplicate|unique/i.test(error.message || "")) {
-        status.textContent = "Already tracked ✓";
+        status.textContent = "Уже отслеживается ✓";
         status.className = "add-channel-status ok";
       } else {
-        status.textContent = `Failed: ${error.message}`;
+        status.textContent = `Ошибка: ${error.message}`;
         status.className = "add-channel-status err";
       }
       return;
     }
-    status.textContent = "Added ✓ — title & stats fill on the next cron run";
+    status.textContent = "Добавлено ✓ — название и статы подтянутся на следующем кроне";
     status.className = "add-channel-status ok";
     input.value = "";
     loadChannels();
@@ -1555,7 +1579,7 @@ let currentTopicWeek = null;
 const topicVideoMap = new Map(); // video_id -> full row for the active week
 
 async function loadTopics(week) {
-  topicsContent.innerHTML = '<div class="loading">Loading topics...</div>';
+  topicsContent.innerHTML = '<div class="loading">Загрузка тем...</div>';
 
   // список недель (для селектора)
   if (!week) {
@@ -1563,10 +1587,10 @@ async function loadTopics(week) {
       .from("topic_clusters")
       .select("week_start")
       .order("week_start", { ascending: false });
-    if (wErr) { topicsContent.innerHTML = `<div class="empty">Error: ${wErr.message}</div>`; return; }
+    if (wErr) { topicsContent.innerHTML = `<div class="empty">Ошибка: ${wErr.message}</div>`; return; }
     topicWeeks = [...new Set((wk || []).map(r => r.week_start))];
     if (!topicWeeks.length) {
-      topicsContent.innerHTML = '<div class="empty">No topic clusters yet. The weekly analysis runs Mondays.</div>';
+      topicsContent.innerHTML = '<div class="empty">Пока нет тематических кластеров. Недельный анализ запускается по понедельникам.</div>';
       return;
     }
     week = topicWeeks[0];
@@ -1579,7 +1603,7 @@ async function loadTopics(week) {
     .select("*")
     .eq("week_start", week)
     .order("video_count", { ascending: false });
-  if (cErr) { topicsContent.innerHTML = `<div class="empty">Error: ${cErr.message}</div>`; return; }
+  if (cErr) { topicsContent.innerHTML = `<div class="empty">Ошибка: ${cErr.message}</div>`; return; }
   currentClusters = clusters || [];
 
   // все видео недели одним запросом (для превью-заголовков и drill-down)
@@ -1600,18 +1624,18 @@ function renderClusters(week) {
   const weekLabel = d => new Date(d + "T00:00:00Z")
     .toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
   const options = topicWeeks.map(w =>
-    `<option value="${w}" ${w === week ? "selected" : ""}>Week of ${weekLabel(w)}</option>`).join("");
+    `<option value="${w}" ${w === week ? "selected" : ""}>Неделя ${weekLabel(w)}</option>`).join("");
 
   const head = `
     <div class="topics-head">
-      <div class="stats">${currentClusters.length} themes · top outliers of the week
-        <span class="topic-sub">label = relative read within each AI cluster (median lift · volume · top-channel concentration), not population saturation — population compass lives in the Weekly Report's Narrative Evidence card</span>
+      <div class="stats">${currentClusters.length} тем · топ-аутлайеры недели
+        <span class="topic-sub">ярлык = относительный read внутри каждого AI-кластера (медианный lift · объём · концентрация топ-канала), а не population-saturation — population-компас живёт в Narrative Evidence Недельного отчёта</span>
       </div>
       <select class="week-select" id="weekSelect">${options}</select>
     </div>`;
 
   if (!currentClusters.length) {
-    topicsContent.innerHTML = head + '<div class="empty">No clusters for this week</div>';
+    topicsContent.innerHTML = head + '<div class="empty">Нет кластеров за эту неделю</div>';
     $("weekSelect").addEventListener("change", e => loadTopics(e.target.value));
     return;
   }
@@ -1627,12 +1651,12 @@ function renderClusters(week) {
       const sat = topicSatLabel(st), conf = topicConf(st), top = Math.round(st.topShare * 100);
       statLine = `
         <div class="topic-sat-row">
-          <span class="wow-sat sat-${sat.key}" title="${sat.txt} — relative read within this AI cluster (a pre-elevated set), not population saturation">${sat.emoji} ${sat.txt}</span>
-          <span class="wow-conf conf-${conf.key}" title="confidence from cluster size (n=${st.n}) and top-channel concentration (${top}%)">conf ${conf.txt}</span>
+          <span class="wow-sat sat-${sat.key}" title="${sat.txt} — относительный read внутри AI-кластера (приподнятый набор), а не population-saturation">${sat.emoji} ${sat.txt}</span>
+          <span class="wow-conf conf-${conf.key}" title="доверие из размера кластера (n=${st.n}) и концентрации топ-канала (${top}%)">дов ${conf.txt}</span>
         </div>
-        <div class="topic-stat">${st.medOutlier.toFixed(1)}× median lift · ${st.n} videos · top ch ${top}%${st.medViews != null ? ` · typ. ${fmt(Math.round(st.medViews))} views` : ""}</div>`;
+        <div class="topic-stat">${st.medOutlier.toFixed(1)}× медианный lift · ${st.n} видео · топ-канал ${top}%${st.medViews != null ? ` · обычно ${fmt(Math.round(st.medViews))} просм` : ""}</div>`;
     } else if (st.medViews != null) {
-      statLine = `<div class="topic-stat">Typical ${fmt(Math.round(st.medViews))} views · ${st.n} videos</div>`;
+      statLine = `<div class="topic-stat">Обычно ${fmt(Math.round(st.medViews))} просм · ${st.n} видео</div>`;
     }
     return `
       <div class="cluster-card" data-cluster="${i}">
@@ -1670,23 +1694,23 @@ function openCluster(idx) {
     const sat = topicSatLabel(st), conf = topicConf(st), top = Math.round(st.topShare * 100);
     baseline = `
       <div class="topic-baseline">
-        <span class="wow-sat sat-${sat.key}" title="relative read within this AI cluster (a pre-elevated set), not population saturation — population compass is the Weekly Report's Narrative Evidence card">${sat.emoji} ${sat.txt}</span>
-        <span class="wow-conf conf-${conf.key}" title="confidence from cluster size (n=${st.n}) and top-channel concentration (${top}%)">conf ${conf.txt}</span>
-        &nbsp;${st.medOutlier.toFixed(1)}× median lift · ${st.n} videos · top channel ${top}%${st.medViews != null ? ` · typ. ${fmt(Math.round(st.medViews))} median views` : ""}
+        <span class="wow-sat sat-${sat.key}" title="относительный read внутри AI-кластера (приподнятый набор), не population-saturation — population-компас в Narrative Evidence Недельного отчёта">${sat.emoji} ${sat.txt}</span>
+        <span class="wow-conf conf-${conf.key}" title="доверие из размера кластера (n=${st.n}) и концентрации топ-канала (${top}%)">дов ${conf.txt}</span>
+        &nbsp;${st.medOutlier.toFixed(1)}× медианный lift · ${st.n} видео · топ-канал ${top}%${st.medViews != null ? ` · обычно ${fmt(Math.round(st.medViews))} медиан. просм` : ""}
       </div>`;
   } else if (st.medViews != null) {
-    baseline = `<div class="topic-baseline">Typical ${fmt(Math.round(st.medViews))} median views (${st.n} videos)</div>`;
+    baseline = `<div class="topic-baseline">Обычно ${fmt(Math.round(st.medViews))} медиан. просм (${st.n} видео)</div>`;
   }
   const sortBar = st.medOutlier != null
     ? `<div class="topic-sort">
-         <button data-sort="outlier" class="${topicSort === "outlier" ? "active" : ""}">Sort: Outlier</button>
-         <button data-sort="xviews" class="${topicSort === "xviews" ? "active" : ""}">Sort: Topic xViews</button>
+         <button data-sort="outlier" class="${topicSort === "outlier" ? "active" : ""}">Сорт: аутлайер</button>
+         <button data-sort="xviews" class="${topicSort === "xviews" ? "active" : ""}">Сорт: xViews темы</button>
        </div>`
     : "";
 
   topicsContent.innerHTML = `
-    <button class="back-btn" id="topicsBack">← All themes</button>
-    <div class="stats"><strong style="color:#e5e5e5">${escapeHtml(c.label)}</strong> · ${vids.length} videos</div>
+    <button class="back-btn" id="topicsBack">← Все темы</button>
+    <div class="stats"><strong style="color:#e5e5e5">${escapeHtml(c.label)}</strong> · ${vids.length} видео</div>
     ${c.description ? `<div class="cluster-desc" style="margin-bottom:10px">${escapeHtml(c.description)}</div>` : ""}
     ${baseline}
     ${sortBar}
@@ -1807,29 +1831,30 @@ function renderWoWPanel(wow) {
     const d = g.dN === 0 ? "±0" : (g.dN > 0 ? "+" : "") + g.dN;
     const hit = (c.hitRate * 100).toFixed(0);
     const top = (c.topShare * 100).toFixed(0);
+    const satRu = SAT_RU[g.sat.key] || g.sat.txt, confRu = CONF_RU[g.conf.key] || g.conf.txt;
     const small = c.cTotal > 0
-      ? `small hit <b>${(c.creatorHit * 100).toFixed(0)}%</b> · lift ${c.creatorLift.toFixed(1)}x${c.bN ? ` <span class="wow-prev">vs big ${c.bigLift.toFixed(1)}x</span>` : ""}`
-      : `<span class="wow-prev">no &lt;300K videos</span>`;
+      ? `мал. хит <b>${(c.creatorHit * 100).toFixed(0)}%</b> · lift ${c.creatorLift.toFixed(1)}x${c.bN ? ` <span class="wow-prev">vs крупн. ${c.bigLift.toFixed(1)}x</span>` : ""}`
+      : `<span class="wow-prev">нет видео &lt;300K</span>`;
     return `
       <div class="wow-card ${cls}">
         <div class="wow-c-head">
           <span class="wow-arrow">${arrow(g)}</span>
-          <span class="wow-label">${escapeHtml(g.label)}</span>
-          <span class="wow-sat sat-${g.sat.key}" title="${g.sat.txt} — hit-rate ${hit}% (${c.n}/${c.total})">${g.sat.emoji} ${g.sat.txt}</span>
-          <span class="wow-conf conf-${g.conf.key}" title="confidence from sample size (n=${c.n}) and channel concentration (top channel = ${top}% of outliers)">conf ${g.conf.txt}</span>
-          <span class="wow-delta ${cls}" title="outlier videos this week vs last week">${d}</span>
+          <span class="wow-label">${escapeHtml(labelRuOf(g.label))}</span>
+          <span class="wow-sat sat-${g.sat.key}" title="${satRu} — хит ${hit}% (${c.n}/${c.total})">${g.sat.emoji} ${satRu}</span>
+          <span class="wow-conf conf-${g.conf.key}" title="доверие из размера выборки (n=${c.n}) и концентрации каналов (топ-канал = ${top}% аутлайеров)">дов ${confRu}</span>
+          <span class="wow-delta ${cls}" title="outlier-видео на этой неделе vs прошлой">${d}</span>
         </div>
         <div class="wow-c-metrics">
-          hit <b>${hit}%</b> (${c.n}/${c.total}) · lift <b>${c.avgO.toFixed(1)}x</b> <span class="wow-prev">med ${c.medO.toFixed(1)}</span> ·
-          <span title="distinct channels with an outlier · share of outliers from the single biggest channel (breadth)">${c.ch} ch · top <b class="${c.topShare > 0.5 ? "wow-warn" : ""}">${top}%</b></span> ·
+          хит <b>${hit}%</b> (${c.n}/${c.total}) · lift <b>${c.avgO.toFixed(1)}x</b> <span class="wow-prev">мед ${c.medO.toFixed(1)}</span> ·
+          <span title="разных каналов с аутлайером · доля аутлайеров у одного крупнейшего канала (широта)">${c.ch} кан. · топ <b class="${c.topShare > 0.5 ? "wow-warn" : ""}">${top}%</b></span> ·
           💬 ${c.commR.toFixed(1)} · ${small}
         </div>
       </div>`;
   }).join("");
   return `
     <div class="wow-panel">
-      <div class="wow-head">📊 Narrative Evidence · this week
-        <span class="wow-sub">hit = outlier rate (saturation) · top% = outlier share of biggest channel (breadth — high = one author, not a market) · small = &lt;300K hit/lift vs big · Δ = outlier videos vs last week · approx (keyword-tagged)</span>
+      <div class="wow-head">📊 Narrative Evidence · эта неделя
+        <span class="wow-sub">хит = доля аутлайеров (насыщенность) · топ% = доля аутлайеров у крупнейшего канала (широта — высоко = один автор, не рынок) · мал. = &lt;300K хит/lift vs крупные · Δ = outlier-видео vs прошлая неделя · приблизительно (по ключевым словам)</span>
       </div>
       <div class="wow-list">${cards}</div>
     </div>`;
@@ -2011,7 +2036,7 @@ async function loadWeeklyReport() {
     .limit(100);
 
   if (vErr) {
-    content.innerHTML = `<div class="empty">Error: ${vErr.message}</div>`;
+    content.innerHTML = `<div class="empty">Ошибка: ${vErr.message}</div>`;
     return;
   }
 
@@ -2067,7 +2092,7 @@ async function loadWeeklyReport() {
 
   // --- render preview ---
   const weekLabel = new Date(Date.now() - 7 * 86400000)
-    .toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    .toLocaleDateString("ru-RU", { month: "short", day: "numeric", year: "numeric" });
 
   const topRows = allVideos.slice(0, 20).map(v => {
     const subs = v.channels?.subscriber_count || 0;
@@ -2080,51 +2105,51 @@ async function loadWeeklyReport() {
         <img class="radar-thumb" src="${escapeHtml(v.thumbnail_url)}" alt="" loading="lazy"/>
         <div class="radar-info">
           <div class="radar-title">${escapeHtml(v.title)}</div>
-          <div class="radar-meta">${escapeHtml(v.channels?.title||"—")} · ${ago(v.published_at)} · ${fmt(subs)} subs${isSmall?" 🟢":""}</div>
+          <div class="radar-meta">${escapeHtml(v.channels?.title||"—")} · ${ago(v.published_at)} · ${fmt(subs)} подп.${isSmall?" 🟢":""}</div>
         </div>
         <div class="radar-metrics">
           ${velHtml}
           <div class="radar-outlier">${(v.outlier_score||0).toFixed(1)}x</div>
-          <div>${fmt(v.vph||0)}/h</div>
+          <div>${fmt(v.vph||0)}/ч</div>
         </div>
       </a>`;
   }).join("");
 
   content.innerHTML = `
     <div class="radar-head">
-      <div class="stats">📝 Week of ${weekLabel} · ${allVideos.length} videos · median outlier ${medianOutlier}x</div>
-      <button class="copy-btn" id="copyReportBtn">📋 Copy Report Prompt</button>
-      <button class="ac-cancel" id="reportSaveBtn" style="margin-left:0" title="Open the Archive compose form, prefilled as a Weekly report, to paste the generated report back">🗂️ Save as report</button>
+      <div class="stats">📝 Неделя ${weekLabel} · ${allVideos.length} видео · медиана аутлайера ${medianOutlier}x</div>
+      <button class="copy-btn" id="copyReportBtn">📋 Скопировать промпт отчёта</button>
+      <button class="ac-cancel" id="reportSaveBtn" style="margin-left:0" title="Открыть форму Архива, предзаполненную как Недельный отчёт, чтобы вставить готовый отчёт">🗂️ Сохранить как отчёт</button>
     </div>
 
     <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;">
       <div style="background:#161616;border:1px solid #1f1f1f;border-radius:10px;padding:12px 18px;font-size:13px;">
-        🟢 Small <strong style="color:#e5e5e5">${stats.small}</strong>
+        🟢 Малые <strong style="color:#e5e5e5">${stats.small}</strong>
       </div>
       <div style="background:#161616;border:1px solid #1f1f1f;border-radius:10px;padding:12px 18px;font-size:13px;">
-        🟡 Mid <strong style="color:#e5e5e5">${stats.mid}</strong>
+        🟡 Средние <strong style="color:#e5e5e5">${stats.mid}</strong>
       </div>
       <div style="background:#161616;border:1px solid #1f1f1f;border-radius:10px;padding:12px 18px;font-size:13px;">
-        ⚫ Large <strong style="color:#e5e5e5">${stats.large}</strong>
+        ⚫ Крупные <strong style="color:#e5e5e5">${stats.large}</strong>
       </div>
       <div style="background:#161616;border:1px solid #1f1f1f;border-radius:10px;padding:12px 18px;font-size:13px;">
-        ⚡ Vel. data <strong style="color:#e5e5e5">${velMap7.size}</strong> videos
+        ⚡ Данные динамики <strong style="color:#e5e5e5">${velMap7.size}</strong> видео
       </div>
     </div>
 
     ${renderWoWPanel(wow)}
 
-    <div class="radar-section-title">🏆 Top Outliers This Week <span>${allVideos.length} videos</span></div>
+    <div class="radar-section-title">🏆 Топ-аутлайеры недели <span>${allVideos.length} видео</span></div>
     <div>${topRows}</div>
-    ${allVideos.length > 20 ? `<div class="stats" style="margin-top:8px">+ ${allVideos.length - 20} more videos included in prompt</div>` : ""}`;
+    ${allVideos.length > 20 ? `<div class="stats" style="margin-top:8px">+ ещё ${allVideos.length - 20} видео включены в промпт</div>` : ""}`;
 
   $("copyReportBtn").addEventListener("click", () => {
     const prompt = buildWeeklyPrompt(allVideos, accelVideos, clusters || [], insights, stats, wow);
     navigator.clipboard.writeText(prompt).then(() => {
       const btn = $("copyReportBtn");
-      btn.textContent = "✓ Copied!";
+      btn.textContent = "✓ Скопировано!";
       btn.classList.add("copied");
-      setTimeout(() => { btn.textContent = "📋 Copy Report Prompt"; btn.classList.remove("copied"); }, 2000);
+      setTimeout(() => { btn.textContent = "📋 Скопировать промпт отчёта"; btn.classList.remove("copied"); }, 2000);
     });
   });
 
@@ -2237,20 +2262,20 @@ STRICT RULES:
 
 /* ---------- Daily analysis checklist ---------- */
 const RADAR_CHECKLIST = [
-  { title: "Start with Accelerating, not all-time outliers",
-    hint:  "Velocity beats lifetime score for what's hot right now." },
-  { title: "Kill noise with absolute scale",
-    hint:  "High outlier on a tiny view count is a baseline artifact — ignore the multiplier." },
-  { title: "Group by narrative, count distinct channels",
-    hint:  "A reportable narrative needs ≥3 independent channels — one creator's bet isn't a wave." },
-  { title: "Find small-channel breakouts inside live themes",
-    hint:  "Themes where <100K channels punch through = opportunity windows for your clients." },
-  { title: "Extract the title or format pattern",
-    hint:  "What's the repeatable hook a creator can copy? Pattern > example." },
-  { title: "Sanity-check with EQS",
-    hint:  "Low EQS = thumbnail-driven attention, won't repeat. High EQS = durable interest." },
-  { title: "Save to library with status + evidence note",
-    hint:  "Today's saves become next week's report. Tag it, note why." },
+  { title: "Начинай с «Ускоряющихся», а не с аутлайеров за всё время",
+    hint:  "Velocity важнее пожизненного скора для того, что горит прямо сейчас." },
+  { title: "Убирай шум абсолютным масштабом",
+    hint:  "Высокий аутлайер при крошечных просмотрах — артефакт baseline; игнорируй множитель." },
+  { title: "Группируй по нарративу, считай разные каналы",
+    hint:  "Для нарратива в отчёт нужно ≥3 независимых канала — ставка одного автора не волна." },
+  { title: "Ищи прорывы малых каналов внутри живых тем",
+    hint:  "Темы, где пробиваются каналы <100K = окна возможностей для твоих клиентов." },
+  { title: "Вытащи паттерн заголовка или формата",
+    hint:  "Какой повторяемый хук креатор может скопировать? Паттерн > пример." },
+  { title: "Перепроверь по EQS",
+    hint:  "Низкий EQS = внимание ради превью, не повторится. Высокий EQS = устойчивый интерес." },
+  { title: "Сохрани в библиотеку со статусом и заметкой-доказательством",
+    hint:  "Сегодняшние сохранения станут отчётом следующей недели. Пометь, запиши почему." },
 ];
 
 function dcKey() {
@@ -2276,10 +2301,10 @@ function renderChecklistHTML() {
     <div class="daily-checklist ${done === total ? "complete" : ""} ${collapsed ? "collapsed" : ""}" id="dailyChecklist">
       <div class="dc-head" id="dcHead">
         <span class="dc-chevron">▸</span>
-        <div class="dc-title">🧭 Daily analysis pass</div>
+        <div class="dc-title">🧭 Дневной проход анализа</div>
         <div class="dc-progress" id="dcProgress">${done}/${total}</div>
         <div class="dc-spacer"></div>
-        <button class="dc-btn" id="dcReset">Reset</button>
+        <button class="dc-btn" id="dcReset">Сброс</button>
       </div>
       <div class="dc-list" id="dcList">${steps}</div>
     </div>`;
@@ -2323,7 +2348,7 @@ function wireChecklist() {
 
 async function loadRadar() {
   const content = $("radarContent");
-  content.innerHTML = '<div class="loading">Building radar...</div>';
+  content.innerHTML = '<div class="loading">Строим радар...</div>';
 
   const since48 = new Date(Date.now() - 48 * 3600000).toISOString();
   const since7d  = new Date(Date.now() -  7 * 86400000).toISOString();
@@ -2399,7 +2424,7 @@ async function loadRadar() {
   // --- render ---
   const hasVel   = velMap.size > 0;
   const hasFresh = (freshVideos || []).length > 0;
-  const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const today = new Date().toLocaleDateString("ru-RU", { month: "short", day: "numeric", year: "numeric" });
 
   function radarRow(v, vel) {
     const subs = v.channels?.subscriber_count || 0;
@@ -2424,42 +2449,42 @@ async function loadRadar() {
 
   const accelHtml = accelVideos.length
     ? accelVideos.map(v => radarRow(v, v.velocity_24h)).join("")
-    : `<div class="empty" style="padding:24px 0">${hasVel ? "No accelerating videos found." : "No velocity data yet — baseline captured, check again in 24h."}</div>`;
+    : `<div class="empty" style="padding:24px 0">${hasVel ? "Ускоряющихся видео не найдено." : "Данных динамики пока нет — baseline снят, проверьте через 24ч."}</div>`;
 
   const creatorHtml = creatorOpps.length
     ? creatorOpps.map(v => radarRow(v, v.velocity_24h)).join("")
-    : `<div class="empty" style="padding:24px 0">No accelerating small/mid creators (&lt;300K) right now.</div>`;
+    : `<div class="empty" style="padding:24px 0">Сейчас нет ускоряющихся малых/средних креаторов (&lt;300K).</div>`;
 
   const smallHtml = smallBreakouts.length
     ? smallBreakouts.map(v => radarRow(v, v.velocity_24h)).join("")
-    : `<div class="empty" style="padding:24px 0">No early breakouts (&lt;300K subs, ≥3x) in the last 7d.</div>`;
+    : `<div class="empty" style="padding:24px 0">Нет ранних прорывов (&lt;300K подп., ≥3x) за последние 7д.</div>`;
 
   const freshHtml = (freshVideos || []).length
     ? freshVideos.map(v => radarRow(v, velMap.get(v.video_id) ?? null)).join("")
-    : `<div class="empty" style="padding:24px 0">No new outliers in the last ${radarWindow}h.</div>`;
+    : `<div class="empty" style="padding:24px 0">Нет новых аутлайеров за последние ${radarWindow}ч.</div>`;
 
   content.innerHTML = `
     ${renderChecklistHTML()}
     <div class="radar-head">
-      <div class="stats">📡 Daily Radar · ${today}</div>
+      <div class="stats">📡 Дневной радар · ${today}</div>
       <div class="vel-window">
-        <button class="date-tab ${radarWindow===24?"active":""}" data-rwin="24">24h</button>
-        <button class="date-tab ${radarWindow===48?"active":""}" data-rwin="48">48h</button>
+        <button class="date-tab ${radarWindow===24?"active":""}" data-rwin="24">24ч</button>
+        <button class="date-tab ${radarWindow===48?"active":""}" data-rwin="48">48ч</button>
       </div>
-      <button class="copy-btn" id="copyRadarBtn">📋 Copy Prompt</button>
-      <button class="ac-cancel" id="radarSaveReportBtn" style="margin-left:0" title="Open the Archive compose form, prefilled as a Daily report, to paste the generated briefing back">🗂️ Save as report</button>
+      <button class="copy-btn" id="copyRadarBtn">📋 Скопировать промпт</button>
+      <button class="ac-cancel" id="radarSaveReportBtn" style="margin-left:0" title="Открыть форму Архива, предзаполненную как Дневной отчёт, чтобы вставить готовый бриф">🗂️ Сохранить как отчёт</button>
     </div>
 
-    <div class="radar-section-title">⚡ Accelerating <span>${accelVideos.length} videos</span> <span class="rst-note">raw · all sizes</span></div>
+    <div class="radar-section-title">⚡ Ускоряющиеся <span>${accelVideos.length} видео</span> <span class="rst-note">raw · все размеры</span></div>
     <div id="radarAccel">${accelHtml}</div>
 
-    <div class="radar-section-title">🌱 Creator Opportunities <span>${creatorOpps.length} videos</span> <span class="rst-note">&lt;300K · accelerating</span></div>
+    <div class="radar-section-title">🌱 Возможности креаторов <span>${creatorOpps.length} видео</span> <span class="rst-note">&lt;300K · ускоряются</span></div>
     <div id="radarCreator">${creatorHtml}</div>
 
-    <div class="radar-section-title">🚀 Early Breakouts <span>${smallBreakouts.length} videos</span></div>
+    <div class="radar-section-title">🚀 Ранние прорывы <span>${smallBreakouts.length} видео</span></div>
     <div id="radarSmall">${smallHtml}</div>
 
-    <div class="radar-section-title">🆕 Fresh Outliers <span>${(freshVideos||[]).length} videos</span></div>
+    <div class="radar-section-title">🆕 Свежие аутлайеры <span>${(freshVideos||[]).length} видео</span></div>
     <div id="radarFresh">${freshHtml}</div>`;
 
   wireChecklist();
@@ -2469,9 +2494,9 @@ async function loadRadar() {
     const prompt = buildRadarPrompt(freshVideos || [], accelVideos, clusters || [], smallBreakouts, creatorOpps);
     navigator.clipboard.writeText(prompt).then(() => {
       const btn = $("copyRadarBtn");
-      btn.textContent = "✓ Copied!";
+      btn.textContent = "✓ Скопировано!";
       btn.classList.add("copied");
-      setTimeout(() => { btn.textContent = "📋 Copy Prompt"; btn.classList.remove("copied"); }, 2000);
+      setTimeout(() => { btn.textContent = "📋 Скопировать промпт"; btn.classList.remove("copied"); }, 2000);
     });
   });
 
@@ -2503,7 +2528,7 @@ async function loadVelocity() {
   const { data: velRows, error: hErr } = await supabase.rpc("velocity_deltas", { since });
 
   if (hErr) {
-    content.innerHTML = `<div class="empty">Error: ${hErr.message}</div>`;
+    content.innerHTML = `<div class="empty">Ошибка: ${hErr.message}</div>`;
     return;
   }
 
@@ -2536,7 +2561,7 @@ async function loadVelocity() {
     .in("video_id", topIds);
 
   if (vErr) {
-    content.innerHTML = `<div class="empty">Error loading video details: ${vErr.message}</div>`;
+    content.innerHTML = `<div class="empty">Ошибка загрузки видео: ${vErr.message}</div>`;
     return;
   }
 
@@ -2569,42 +2594,42 @@ async function loadVelocity() {
           <div class="thumb">
             <img src="${escapeHtml(v.thumbnail_url)}" alt="" loading="lazy"/>
             <div class="vel-delta-badge">+${fmt(d.delta)}</div>
-            <div class="size-tag ${tag}">${fmt(v.channels?.subscriber_count || 0)} subs</div>
-            <button class="save-btn ${inLib ? "saved" : ""}" data-id="${escapeHtml(v.video_id)}" title="${inLib ? "Remove from library" : "Add to library"}">${bookmarkSvg()}</button>
+            <div class="size-tag ${tag}">${fmt(v.channels?.subscriber_count || 0)} подп.</div>
+            <button class="save-btn ${inLib ? "saved" : ""}" data-id="${escapeHtml(v.video_id)}" title="${inLib ? "Убрать из библиотеки" : "В библиотеку"}">${bookmarkSvg()}</button>
             <div class="score-badge ${sigClass(v.outlier_score||0)}">${(v.outlier_score || 0).toFixed(1)}x</div>
           </div>
           <div class="body">
             <div class="title">${escapeHtml(v.title)}</div>
             <div class="channel">${escapeHtml(v.channels?.title || "—")} · ${ago(v.published_at)}</div>
             <div class="metrics">
-              <div class="m-primary">+Views<span>${fmt(d.delta)}</span></div>
-              <div class="m-secondary">Growth<span>${d.growthPct.toFixed(1)}%</span></div>
-              <div class="m-secondary">VPH<span>${fmt(d.vph || 0)}/h</span></div>
-              <div class="m-dim">Total<span>${fmt(d.view_count)}</span></div>
+              <div class="m-primary">+Просм<span>${fmt(d.delta)}</span></div>
+              <div class="m-secondary">Рост<span>${d.growthPct.toFixed(1)}%</span></div>
+              <div class="m-secondary">VPH<span>${fmt(d.vph || 0)}/ч</span></div>
+              <div class="m-dim">Всего<span>${fmt(d.view_count)}</span></div>
             </div>
           </div>
         </a>`;
       }).join("");
 
-    $("velGrid").innerHTML = cards || '<div class="empty">No videos match filter</div>';
-    const scope = sizeVal === "all" ? "" : sizeVal === "creator" ? " · creators <300K" : ` · ${sizeVal}`;
-    $("velStats").textContent = `${filtered.length} of ${top.length} growing videos${scope} · last ${velWindow}h`;
+    $("velGrid").innerHTML = cards || '<div class="empty">Нет видео под фильтр</div>';
+    const scope = sizeVal === "all" ? "" : sizeVal === "creator" ? " · креаторы <300K" : ` · ${sizeVal}`;
+    $("velStats").textContent = `${filtered.length} из ${top.length} растущих видео${scope} · за ${velWindow}ч`;
   }
 
   content.innerHTML = `
     <div class="vel-head">
       <div class="stats" id="velStats"></div>
       <div class="vel-window">
-        <button class="date-tab ${velWindow === 24 ? "active" : ""}" data-velwin="24">24h</button>
-        <button class="date-tab ${velWindow === 48 ? "active" : ""}" data-velwin="48">48h</button>
-        <button class="date-tab ${velWindow === 168 ? "active" : ""}" data-velwin="168">7d</button>
+        <button class="date-tab ${velWindow === 24 ? "active" : ""}" data-velwin="24">24ч</button>
+        <button class="date-tab ${velWindow === 48 ? "active" : ""}" data-velwin="48">48ч</button>
+        <button class="date-tab ${velWindow === 168 ? "active" : ""}" data-velwin="168">7д</button>
       </div>
       <select id="velSize" style="background:#161616;border:1px solid #2a2a2a;color:#e5e5e5;padding:7px 12px;border-radius:8px;font-size:13px;outline:none;">
-        <option value="creator" selected>Creator &lt;300K</option>
-        <option value="all">All sizes</option>
-        <option value="small">Small &lt;100K</option>
-        <option value="mid">Mid 100K–1M</option>
-        <option value="large">Large &gt;1M</option>
+        <option value="creator" selected>Креаторы &lt;300K</option>
+        <option value="all">Все размеры</option>
+        <option value="small">Малые &lt;100K</option>
+        <option value="mid">Средние 100K–1M</option>
+        <option value="large">Крупные &gt;1M</option>
       </select>
     </div>
     <div class="grid" id="velGrid"></div>`;
@@ -2647,7 +2672,7 @@ async function loadInsights() {
       </div>`).join("");
     panel.innerHTML = `
       <div class="insights-panel">
-        <div class="insights-header">🤖 AI Insights · week of ${weekLabel}</div>
+        <div class="insights-header">🤖 AI-инсайты · неделя ${weekLabel}</div>
         <div class="insight-cards">${cards}</div>
       </div>`;
   } catch {
@@ -2663,12 +2688,12 @@ let pendingComposeType = null; // set by "Save as report" on other pages → ope
 
 function reportDateLabel(d) {
   return new Date(d + "T00:00:00Z")
-    .toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+    .toLocaleDateString("ru-RU", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
 }
 
 async function loadReports() {
   const content = $("archiveContent");
-  content.innerHTML = '<div class="loading">Loading reports...</div>';
+  content.innerHTML = '<div class="loading">Загрузка отчётов...</div>';
 
   const { data, error } = await supabase
     .from("reports")
@@ -2677,7 +2702,7 @@ async function loadReports() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    content.innerHTML = `<div class="empty">Error: ${escapeHtml(error.message)}</div>`;
+    content.innerHTML = `<div class="empty">Ошибка: ${escapeHtml(error.message)}</div>`;
     return;
   }
   archiveCompiled = data || [];
@@ -2690,39 +2715,39 @@ function renderArchive() {
 
   const cards = archiveCompiled.length
     ? archiveCompiled.map(r => {
-        const title = r.title?.trim() || `${r.report_type === "weekly" ? "Weekly Report" : "Daily Radar"} · ${reportDateLabel(r.report_date)}`;
+        const title = r.title?.trim() || `${r.report_type === "weekly" ? "Недельный отчёт" : "Дневной радар"} · ${reportDateLabel(r.report_date)}`;
         return `
         <div class="report-card" data-id="${r.id}">
           <div class="rc-head" data-toggle="${r.id}">
-            <span class="rc-type ${r.report_type}">${r.report_type}</span>
+            <span class="rc-type ${r.report_type}">${r.report_type === "weekly" ? "недельный" : "дневной"}</span>
             <span class="rc-title">${escapeHtml(title)}</span>
             <span class="rc-date">${reportDateLabel(r.report_date)}</span>
-            <button class="rc-del" data-del="${r.id}" title="Delete report">×</button>
+            <button class="rc-del" data-del="${r.id}" title="Удалить отчёт">×</button>
           </div>
           <div class="rc-body" id="rcBody-${r.id}"></div>
         </div>`;
       }).join("")
-    : '<div class="empty">No reports yet. Generate one in your LLM, then paste the markdown here with “＋ New Report”.</div>';
+    : '<div class="empty">Пока нет отчётов. Сгенерируйте в LLM, затем вставьте markdown сюда через «＋ Новый отчёт».</div>';
 
   content.innerHTML = `
     <div class="archive-head">
-      <div class="stats">🗂️ ${archiveCompiled.length} report${archiveCompiled.length !== 1 ? "s" : ""}</div>
-      <button class="ac-save" id="archiveNewBtn">＋ New Report</button>
+      <div class="stats">🗂️ ${archiveCompiled.length} отч.</div>
+      <button class="ac-save" id="archiveNewBtn">＋ Новый отчёт</button>
     </div>
 
     <div class="archive-compose ${composeOpen ? "" : "hidden"}" id="archiveCompose">
       <div class="ac-row">
         <select id="acType">
-          <option value="daily">Daily Radar</option>
-          <option value="weekly">Weekly Report</option>
+          <option value="daily">Дневной радар</option>
+          <option value="weekly">Недельный отчёт</option>
         </select>
         <input type="date" id="acDate" value="${today}"/>
-        <input type="text" class="ac-title" id="acTitle" placeholder="Title (optional — auto from type + date)"/>
+        <input type="text" class="ac-title" id="acTitle" placeholder="Заголовок (необязательно — авто из типа и даты)"/>
       </div>
-      <textarea class="ac-body" id="acBody" placeholder="Paste the generated report markdown here..."></textarea>
+      <textarea class="ac-body" id="acBody" placeholder="Вставьте сюда markdown сгенерированного отчёта..."></textarea>
       <div class="ac-actions">
-        <button class="ac-save" id="acSaveBtn">Save report</button>
-        <button class="ac-cancel" id="acCancelBtn">Cancel</button>
+        <button class="ac-save" id="acSaveBtn">Сохранить отчёт</button>
+        <button class="ac-cancel" id="acCancelBtn">Отмена</button>
       </div>
     </div>
 
@@ -2745,7 +2770,7 @@ function wireArchive() {
     const btn = $("acSaveBtn");
     const body = $("acBody").value.trim();
     if (!body) { $("acBody").focus(); return; }
-    btn.disabled = true; btn.textContent = "Saving...";
+    btn.disabled = true; btn.textContent = "Сохраняю...";
     const { error } = await supabase.from("reports").insert({
       report_type: $("acType").value,
       report_date: $("acDate").value || new Date().toLocaleDateString("en-CA"),
@@ -2753,8 +2778,8 @@ function wireArchive() {
       body,
     });
     if (error) {
-      btn.disabled = false; btn.textContent = "Save report";
-      alert("Save failed: " + error.message);
+      btn.disabled = false; btn.textContent = "Сохранить отчёт";
+      alert("Не удалось сохранить: " + error.message);
       return;
     }
     composeOpen = false;
@@ -2784,9 +2809,9 @@ function wireArchive() {
     if (!del) return;
     e.stopPropagation();
     const id = del.dataset.del;
-    if (!confirm("Delete this report? This cannot be undone.")) return;
+    if (!confirm("Удалить этот отчёт? Действие необратимо.")) return;
     const { error } = await supabase.from("reports").delete().eq("id", id);
-    if (error) { alert("Delete failed: " + error.message); return; }
+    if (error) { alert("Не удалось удалить: " + error.message); return; }
     archiveCompiled = archiveCompiled.filter(r => String(r.id) !== String(id));
     renderArchive();
   });
@@ -2816,15 +2841,15 @@ let recoComposeOpen = false;
 
 async function loadRecommendations() {
   const content = $("recosContent");
-  content.innerHTML = '<div class="loading">Loading recommendations...</div>';
+  content.innerHTML = '<div class="loading">Загрузка рекомендаций...</div>';
 
   const { data, error } = await supabase
     .from("recommendations")
     .select("*")
     .order("created_at", { ascending: false });
   if (error) {
-    content.innerHTML = `<div class="empty">Error: ${escapeHtml(error.message)}
-      <div class="topic-sub" style="margin-top:8px">If the table is missing, apply <code>migrations/add_recommendations.sql</code> in Supabase first.</div></div>`;
+    content.innerHTML = `<div class="empty">Ошибка: ${escapeHtml(error.message)}
+      <div class="topic-sub" style="margin-top:8px">Если таблицы нет — сначала примените <code>migrations/add_recommendations.sql</code> в Supabase.</div></div>`;
     return;
   }
   recoRows = data || [];
@@ -2891,8 +2916,8 @@ function recoOutcomeChips(r) {
     const cls = c.state === "hit" ? "hit" : c.state === "miss" ? "miss" : c.state === "pending" ? "pending" : "na";
     const val = (c.state === "hit" || c.state === "miss") ? ` ${c.ratio.toFixed(2)}×` : c.state === "pending" ? " ⏳" : " —";
     const tip = (c.state === "hit" || c.state === "miss")
-      ? `${fmt(c.views)} views by day ${h} vs baseline ${fmt(r.baseline_views)} = ${c.ratio.toFixed(2)}× (hit ≥ ${RECO_HIT}×)`
-      : c.state === "pending" ? `not yet matured (needs ${h} days since publish)` : "link a published video to measure";
+      ? `${fmt(c.views)} просмотров к дню ${h} vs base ${fmt(r.baseline_views)} = ${c.ratio.toFixed(2)}× (хит ≥ ${RECO_HIT}×)`
+      : c.state === "pending" ? `ещё не дозрело (нужно ${h} дн с публикации)` : "привяжите опубликованное видео для замера";
     return `<span class="reco-chip reco-${cls}" title="${tip}">d${h}${val}</span>`;
   }).join("");
 }
@@ -2917,33 +2942,34 @@ function renderRecommendations() {
     const pct = s.n ? Math.round(s.hit / s.n * 100) : null;
     const cls = pct == null ? "" : pct >= 50 ? "good" : pct >= 25 ? "mid" : "low";
     return `<div class="ns-card ${cls}">
-      <div class="ns-h">day ${h}</div>
+      <div class="ns-h">день ${h}</div>
       <div class="ns-v">${pct == null ? "—" : pct + "%"}</div>
-      <div class="ns-sub">${s.hit}/${s.n} beat baseline ×${RECO_HIT}</div>
+      <div class="ns-sub">${s.hit}/${s.n} перебили base ×${RECO_HIT}</div>
     </div>`;
   }).join("");
 
+  const statusRu = { open: "открыта", published: "опубликовано", dropped: "снято" };
   const rows = recoRows.length ? recoRows.map(r => {
-    const statusChip = `<span class="reco-status st-${r.status}">${r.status}</span>`;
+    const statusChip = `<span class="reco-status st-${r.status}">${statusRu[r.status] || r.status}</span>`;
     let body = "";
     if (r.status === "published") {
       body = `
         <div class="reco-outcome">${recoOutcomeChips(r)}</div>
         <div class="reco-meta">
-          ${r.target_channel_id ? `<b>${escapeHtml(r.target_channel_id)}</b> · ` : ""}baseline ${fmt(r.baseline_views || 0)} ·
-          <a href="https://youtu.be/${encodeURIComponent(r.video_id)}" target="_blank" rel="noopener">video ↗</a> ·
-          published ${r.published_at ? ago(r.published_at) : "—"}
-          <button class="reco-mini" data-unlink="${r.id}">unlink</button>
+          ${r.target_channel_id ? `<b>${escapeHtml(r.target_channel_id)}</b> · ` : ""}база ${fmt(r.baseline_views || 0)} ·
+          <a href="https://youtu.be/${encodeURIComponent(r.video_id)}" target="_blank" rel="noopener">видео ↗</a> ·
+          опубл. ${r.published_at ? ago(r.published_at) : "—"}
+          <button class="reco-mini" data-unlink="${r.id}">отвязать</button>
         </div>`;
     } else if (r.status === "open") {
       body = `
         <div class="reco-link-row">
-          <input class="reco-link-input" data-linkinput="${r.id}" placeholder="Paste published video URL or 11-char ID (must be a tracked channel)"/>
-          <button class="reco-mini link" data-link="${r.id}">Link video</button>
-          <button class="reco-mini" data-drop="${r.id}">Drop</button>
+          <input class="reco-link-input" data-linkinput="${r.id}" placeholder="URL опубликованного видео или 11-симв. ID (канал должен отслеживаться)"/>
+          <button class="reco-mini link" data-link="${r.id}">Привязать</button>
+          <button class="reco-mini" data-drop="${r.id}">Снять</button>
         </div>`;
     } else {
-      body = `<div class="reco-meta"><button class="reco-mini" data-reopen="${r.id}">Reopen</button></div>`;
+      body = `<div class="reco-meta"><button class="reco-mini" data-reopen="${r.id}">Вернуть</button></div>`;
     }
     return `
       <div class="reco-card" data-id="${r.id}">
@@ -2951,35 +2977,35 @@ function renderRecommendations() {
           ${statusChip}
           ${r.theme ? `<span class="reco-theme">${escapeHtml(r.theme)}</span>` : ""}
           <span class="reco-idea">${escapeHtml(r.idea)}</span>
-          <button class="rc-del" data-del="${r.id}" title="Delete recommendation">×</button>
+          <button class="rc-del" data-del="${r.id}" title="Удалить рекомендацию">×</button>
         </div>
         ${body}
         ${r.notes ? `<div class="reco-notes">${escapeHtml(r.notes)}</div>` : ""}
       </div>`;
-  }).join("") : '<div class="empty">No recommendations yet. Add the ideas you put in a report, then link the video once the creator publishes — outcomes appear at 7/14/30 days.</div>';
+  }).join("") : '<div class="empty">Пока нет рекомендаций. Добавьте идеи из отчёта, затем привяжите видео после публикации — исход появится на 7/14/30 день.</div>';
 
   content.innerHTML = `
     <div class="ns-panel">
-      <div class="ns-head">🧭 North-star · share of recommendations that beat the channel baseline ×${RECO_HIT}
-        <span class="topic-sub">measured live from video_history at each horizon · only matured, linked recommendations count toward the rate</span>
+      <div class="ns-head">🧭 North-star · доля рекомендаций, перебивших baseline канала ×${RECO_HIT}
+        <span class="topic-sub">считается вживую из video_history на каждом горизонте · в долю идут только дозревшие привязанные рекомендации</span>
       </div>
       <div class="ns-grid">${nsCards}</div>
     </div>
 
     <div class="archive-head">
-      <div class="stats">🧭 ${counts.open} open · ${counts.published} published · ${counts.dropped} dropped</div>
-      <button class="ac-save" id="recoNewBtn">＋ New recommendation</button>
+      <div class="stats">🧭 ${counts.open} открыто · ${counts.published} опубликовано · ${counts.dropped} снято</div>
+      <button class="ac-save" id="recoNewBtn">＋ Новая рекомендация</button>
     </div>
 
     <div class="archive-compose ${recoComposeOpen ? "" : "hidden"}" id="recoCompose">
       <div class="ac-row">
-        <input type="text" class="ac-title" id="recoTheme" placeholder="Theme / cluster (optional)"/>
+        <input type="text" class="ac-title" id="recoTheme" placeholder="Тема / кластер (необязательно)"/>
       </div>
-      <textarea class="ac-body" id="recoIdea" placeholder="The recommended idea — what to shoot..."></textarea>
-      <input type="text" class="ac-title" id="recoNotes" placeholder="Notes (optional)"/>
+      <textarea class="ac-body" id="recoIdea" placeholder="Рекомендованная идея — что снять..."></textarea>
+      <input type="text" class="ac-title" id="recoNotes" placeholder="Заметки (необязательно)"/>
       <div class="ac-actions">
-        <button class="ac-save" id="recoSaveBtn">Save recommendation</button>
-        <button class="ac-cancel" id="recoCancelBtn">Cancel</button>
+        <button class="ac-save" id="recoSaveBtn">Сохранить рекомендацию</button>
+        <button class="ac-cancel" id="recoCancelBtn">Отмена</button>
       </div>
     </div>
 
@@ -3002,14 +3028,14 @@ function wireRecommendations() {
     const idea = $("recoIdea").value.trim();
     if (!idea) { $("recoIdea").focus(); return; }
     const btn = $("recoSaveBtn");
-    btn.disabled = true; btn.textContent = "Saving...";
+    btn.disabled = true; btn.textContent = "Сохраняю...";
     const { error } = await supabase.from("recommendations").insert({
       idea,
       theme: $("recoTheme").value.trim(),
       notes: $("recoNotes").value.trim(),
       status: "open",
     });
-    if (error) { btn.disabled = false; btn.textContent = "Save recommendation"; alert("Save failed: " + error.message); return; }
+    if (error) { btn.disabled = false; btn.textContent = "Сохранить рекомендацию"; alert("Не удалось сохранить: " + error.message); return; }
     recoComposeOpen = false;
     await loadRecommendations();
   });
@@ -3021,9 +3047,9 @@ function wireRecommendations() {
     if (!id) return;
 
     if (t.dataset.del) {
-      if (!confirm("Delete this recommendation? This cannot be undone.")) return;
+      if (!confirm("Удалить эту рекомендацию? Действие необратимо.")) return;
       const { error } = await supabase.from("recommendations").delete().eq("id", id);
-      if (error) { alert("Delete failed: " + error.message); return; }
+      if (error) { alert("Не удалось удалить: " + error.message); return; }
       recoRows = recoRows.filter(r => String(r.id) !== String(id));
       renderRecommendations();
       return;
@@ -3031,7 +3057,7 @@ function wireRecommendations() {
     if (t.dataset.drop || t.dataset.reopen) {
       const status = t.dataset.drop ? "dropped" : "open";
       const { error } = await supabase.from("recommendations").update({ status, updated_at: new Date().toISOString() }).eq("id", id);
-      if (error) { alert("Update failed: " + error.message); return; }
+      if (error) { alert("Не удалось обновить: " + error.message); return; }
       await loadRecommendations();
       return;
     }
@@ -3039,23 +3065,23 @@ function wireRecommendations() {
       const { error } = await supabase.from("recommendations")
         .update({ status: "open", video_id: null, baseline_views: null, published_at: null, target_channel_id: null, updated_at: new Date().toISOString() })
         .eq("id", id);
-      if (error) { alert("Unlink failed: " + error.message); return; }
+      if (error) { alert("Не удалось отвязать: " + error.message); return; }
       await loadRecommendations();
       return;
     }
     if (t.dataset.link) {
       const input = list.querySelector(`[data-linkinput="${id}"]`);
       const vid = parseVideoId(input?.value);
-      if (!vid) { alert("Could not read a video ID. Paste a YouTube URL or the 11-character ID."); return; }
-      t.disabled = true; t.textContent = "Linking...";
+      if (!vid) { alert("Не удалось распознать ID видео. Вставьте URL YouTube или 11-символьный ID."); return; }
+      t.disabled = true; t.textContent = "Привязываю...";
       const { data: v, error } = await supabase
         .from("videos")
         .select("video_id, published_at, channel_id, channels(title, avg_views)")
         .eq("video_id", vid)
         .maybeSingle();
       if (error || !v) {
-        t.disabled = false; t.textContent = "Link video";
-        alert(v ? ("Lookup failed: " + error.message) : "That video isn't tracked. Add its channel first (Channels page) so outcomes can be measured.");
+        t.disabled = false; t.textContent = "Привязать";
+        alert(v ? ("Ошибка поиска: " + error.message) : "Это видео не отслеживается. Сначала добавьте его канал (страница «Каналы»), чтобы можно было замерить исход.");
         return;
       }
       const baseline = Math.round(v.channels?.avg_views || 0);
@@ -3067,7 +3093,7 @@ function wireRecommendations() {
         target_channel_id: v.channels?.title || v.channel_id,
         updated_at: new Date().toISOString(),
       }).eq("id", id);
-      if (uErr) { t.disabled = false; t.textContent = "Link video"; alert("Link failed: " + uErr.message); return; }
+      if (uErr) { t.disabled = false; t.textContent = "Привязать"; alert("Не удалось привязать: " + uErr.message); return; }
       await loadRecommendations();
       return;
     }
@@ -3083,10 +3109,10 @@ let currentPanelId  = null;
 let notesDebounce   = null;
 
 function sigLabel(score) {
-  if (score >= 10) return { text: "Extreme breakout",  color: "#ef4444" };
-  if (score >= 5)  return { text: "Strong outlier",    color: "#f97316" };
-  if (score >= 3)  return { text: "Moderate outlier",  color: "#8b5cf6" };
-  return             { text: "Weak signal",            color: "#555"    };
+  if (score >= 10) return { text: "Экстремальный прорыв", color: "#ef4444" };
+  if (score >= 5)  return { text: "Сильный аутлайер",     color: "#f97316" };
+  if (score >= 3)  return { text: "Умеренный аутлайер",   color: "#8b5cf6" };
+  return             { text: "Слабый сигнал",             color: "#555"    };
 }
 
 function generateWhyItMatters(v) {
@@ -3145,7 +3171,7 @@ function closePanel() {
 async function openPanel(v) {
   currentPanelId = v.video_id;
   panelEl.classList.add("open");
-  panelBody.innerHTML = '<div class="loading" style="padding:40px 20px">Loading...</div>';
+  panelBody.innerHTML = '<div class="loading" style="padding:40px 20px">Загрузка...</div>';
 
   const { data: cand } = await supabase
     .from("report_candidates")
@@ -3160,13 +3186,13 @@ async function openPanel(v) {
   const bullets = generateWhyItMatters(v);
 
   const statusCfg = [
-    { key: "watch_later",    cls: "s-watch_later",    label: "👀 Watch Later"      },
-    { key: "candidate",      cls: "s-candidate",      label: "📋 Candidate"        },
-    { key: "evidence",       cls: "s-evidence",       label: "📊 Evidence"         },
-    { key: "title_pattern",  cls: "s-title_pattern",  label: "🏷️ Title Pattern"    },
-    { key: "small_breakout", cls: "s-small_breakout", label: "🚀 Small Breakout"   },
-    { key: "used_in_report", cls: "s-used_in_report",  label: "✅ Used in Report"   },
-    { key: "rejected",       cls: "s-rejected",       label: "❌ Rejected"         },
+    { key: "watch_later",    cls: "s-watch_later",    label: "👀 Позже"            },
+    { key: "candidate",      cls: "s-candidate",      label: "📋 Кандидат"         },
+    { key: "evidence",       cls: "s-evidence",       label: "📊 Доказательство"   },
+    { key: "title_pattern",  cls: "s-title_pattern",  label: "🏷️ Паттерн заголовка" },
+    { key: "small_breakout", cls: "s-small_breakout", label: "🚀 Прорыв малого"    },
+    { key: "used_in_report", cls: "s-used_in_report",  label: "✅ В отчёте"         },
+    { key: "rejected",       cls: "s-rejected",       label: "❌ Отклонено"        },
   ];
 
   panelBody.innerHTML = `
@@ -3174,25 +3200,25 @@ async function openPanel(v) {
 
     <div class="panel-section">
       <div class="panel-title">${escapeHtml(v.title)}</div>
-      <div class="panel-meta">${escapeHtml(v.channels?.title || "—")} · ${fmt(subs)} subs · ${ago(v.published_at)}</div>
-      <a href="https://youtube.com/watch?v=${encodeURIComponent(v.video_id)}" target="_blank" rel="noopener" class="panel-yt-link">▶ Watch on YouTube</a>
+      <div class="panel-meta">${escapeHtml(v.channels?.title || "—")} · ${fmt(subs)} подп. · ${ago(v.published_at)}</div>
+      <a href="https://youtube.com/watch?v=${encodeURIComponent(v.video_id)}" target="_blank" rel="noopener" class="panel-yt-link">▶ Смотреть на YouTube</a>
     </div>
 
     <div class="panel-section panel-metrics-grid">
       <div class="panel-metric primary">
-        <div class="pm-label">Outlier Score</div>
+        <div class="pm-label">Аутлайер-скор</div>
         <div class="pm-value" style="color:${sig.color}">${(v.outlier_score || 0).toFixed(1)}x</div>
         <div class="pm-sub">${sig.text}</div>
       </div>
       <div class="panel-metric">
-        <div class="pm-label">Views</div>
+        <div class="pm-label">Просмотры</div>
         <div class="pm-value">${fmt(v.view_count || 0)}</div>
       </div>
       <div class="panel-metric">
         <div class="pm-label">VPH</div>
-        <div class="pm-value">${fmt(v.vph || 0)}/h</div>
+        <div class="pm-value">${fmt(v.vph || 0)}/ч</div>
       </div>
-      <div class="panel-metric" title="Engagement Quality Score — durability of attention. Low = thumbnail-driven spike that won't repeat. High = real, lasting interest.">
+      <div class="panel-metric" title="Engagement Quality Score — устойчивость внимания. Низкий = всплеск ради превью, не повторится. Высокий = реальный, долгий интерес.">
         <div class="pm-label">EQS</div>
         <div class="pm-value">${(v.eqs || 0).toFixed(2)}</div>
       </div>
@@ -3200,8 +3226,8 @@ async function openPanel(v) {
 
     <div class="panel-section">
       <div class="panel-section-title">
-        Why it matters
-        <button class="copy-evidence-btn" id="copyEvidenceBtn">Copy evidence</button>
+        Почему это важно
+        <button class="copy-evidence-btn" id="copyEvidenceBtn">Копировать для отчёта</button>
       </div>
       <ul class="panel-bullets">
         ${bullets.map(b => `<li>${escapeHtml(b)}</li>`).join("")}
@@ -3209,15 +3235,15 @@ async function openPanel(v) {
     </div>
 
     <div class="panel-section">
-      <div class="panel-section-title">Report status</div>
-      <div class="panel-status-sublabel">Save type</div>
+      <div class="panel-section-title">Статус для отчёта</div>
+      <div class="panel-status-sublabel">Тип сохранения</div>
       <div class="panel-status-row" style="margin-bottom:10px">
         ${statusCfg.filter(s => !["used_in_report","rejected"].includes(s.key)).map(s => `
           <button class="status-btn ${s.cls} ${status === s.key ? "active" : ""}" data-status="${s.key}">
             ${s.label}
           </button>`).join("")}
       </div>
-      <div class="panel-status-sublabel">Final state</div>
+      <div class="panel-status-sublabel">Финальный статус</div>
       <div class="panel-status-row">
         ${statusCfg.filter(s => ["used_in_report","rejected"].includes(s.key)).map(s => `
           <button class="status-btn ${s.cls} ${status === s.key ? "active" : ""}" data-status="${s.key}">
@@ -3227,8 +3253,8 @@ async function openPanel(v) {
     </div>
 
     <div class="panel-section">
-      <div class="panel-section-title">Notes</div>
-      <textarea class="panel-notes" id="panelNotes" placeholder="Add analysis notes...">${escapeHtml(notes)}</textarea>
+      <div class="panel-section-title">Заметки</div>
+      <textarea class="panel-notes" id="panelNotes" placeholder="Добавьте заметки по анализу...">${escapeHtml(notes)}</textarea>
       <div class="panel-saved-note" id="panelSavedNote"></div>
     </div>`;
 
@@ -3260,21 +3286,21 @@ async function openPanel(v) {
     const text = buildEvidenceCopy(v, bullets, notesVal);
     await navigator.clipboard.writeText(text);
     const btn = $("copyEvidenceBtn");
-    btn.textContent = "Copied ✓";
+    btn.textContent = "Скопировано ✓";
     btn.classList.add("copied");
-    setTimeout(() => { btn.textContent = "Copy evidence"; btn.classList.remove("copied"); }, 2000);
+    setTimeout(() => { btn.textContent = "Копировать для отчёта"; btn.classList.remove("copied"); }, 2000);
   });
 
   // notes — debounced save
   $("panelNotes").addEventListener("input", e => {
     clearTimeout(notesDebounce);
-    $("panelSavedNote").textContent = "Saving...";
+    $("panelSavedNote").textContent = "Сохраняю...";
     notesDebounce = setTimeout(async () => {
       await supabase.from("report_candidates").upsert(
         { video_id: v.video_id, notes: e.target.value, updated_at: new Date().toISOString() },
         { onConflict: "video_id" }
       );
-      $("panelSavedNote").textContent = "Saved ✓";
+      $("panelSavedNote").textContent = "Сохранено ✓";
       setTimeout(() => { if ($("panelSavedNote")) $("panelSavedNote").textContent = ""; }, 2000);
     }, 900);
   });
