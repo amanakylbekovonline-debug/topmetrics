@@ -759,6 +759,23 @@
   .reco-mini.link { color: #6ee7b7; border-color: rgba(34,197,94,.3); }
   .reco-mini:hover { background: #222; }
   .reco-notes { font-size: 12px; color: #999; margin-top: 8px; border-top: 1px solid #1f1f1f; padding-top: 8px; }
+
+  /* AI analyst panel (Daily Radar) */
+  .analyst-trigger { background: #1e1b3a !important; border-color: #4c1d95 !important; color: #c4b5fd !important; }
+  .analyst-panel:empty { display: none; }
+  .analyst-panel { border: 1px solid rgba(139,92,246,.3); border-radius: 12px; background: #14121f; margin-bottom: 18px; overflow: hidden; }
+  .analyst-head { display: flex; align-items: center; gap: 10px; padding: 12px 16px; font-weight: 600; color: #e5e5e5; border-bottom: 1px solid rgba(139,92,246,.15); background: #181527; }
+  .analyst-meta { font-size: 11px; color: #8b80a8; font-weight: 400; }
+  .analyst-refresh { margin-left: auto; background: #221d3a; border: 1px solid rgba(139,92,246,.3); color: #c4b5fd; border-radius: 7px; padding: 4px 10px; font-size: 12px; cursor: pointer; }
+  .analyst-refresh:hover { background: #2a2447; }
+  .analyst-cta { padding: 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .analyst-body { padding: 4px 18px 16px; font-size: 14px; line-height: 1.6; color: #cfcfe0; }
+  .analyst-body h2 { font-size: 15px; color: #c4b5fd; margin: 18px 0 8px; }
+  .analyst-body h2:first-child { margin-top: 8px; }
+  .analyst-body ul, .analyst-body ol { margin: 6px 0 6px 20px; }
+  .analyst-body li { margin: 4px 0; }
+  .analyst-body strong { color: #e5e5e5; }
+  .analyst-body code { background: #221d3a; padding: 1px 5px; border-radius: 4px; font-size: 13px; color: #ddd6fe; }
   .xviews-badge {
     position: absolute; bottom: 8px; left: 8px;
     padding: 3px 9px; border-radius: 999px;
@@ -2471,9 +2488,12 @@ async function loadRadar() {
         <button class="date-tab ${radarWindow===24?"active":""}" data-rwin="24">24ч</button>
         <button class="date-tab ${radarWindow===48?"active":""}" data-rwin="48">48ч</button>
       </div>
+      <button class="copy-btn analyst-trigger" id="radarAnalystBtn">🧠 Анализ</button>
       <button class="copy-btn" id="copyRadarBtn">📋 Скопировать промпт</button>
       <button class="ac-cancel" id="radarSaveReportBtn" style="margin-left:0" title="Открыть форму Архива, предзаполненную как Дневной отчёт, чтобы вставить готовый бриф">🗂️ Сохранить как отчёт</button>
     </div>
+
+    <div id="radarAnalyst" class="analyst-panel"></div>
 
     <div class="radar-section-title">⚡ Ускоряющиеся <span>${accelVideos.length} видео</span> <span class="rst-note">raw · все размеры</span></div>
     <div id="radarAccel">${accelHtml}</div>
@@ -2488,6 +2508,54 @@ async function loadRadar() {
     <div id="radarFresh">${freshHtml}</div>`;
 
   wireChecklist();
+
+  // --- AI analyst (Sonnet via radar-analyst edge fn) ---
+  const serAnalyst = (arr, delta) => (arr || []).slice(0, 25).map(v => ({
+    t: v.title,
+    ch: v.channels?.title || "—",
+    subs: v.channels?.subscriber_count || 0,
+    x: +(v.outlier_score || 0).toFixed(1),
+    plus: delta ? delta(v) : null,
+    vph: Math.round(v.vph || 0),
+  }));
+  const analystPayload = () => ({
+    accel:          serAnalyst(accelVideos,    v => v.velocity_24h),
+    creatorOpps:    serAnalyst(creatorOpps,    v => v.velocity_24h),
+    smallBreakouts: serAnalyst(smallBreakouts, v => v.velocity_24h),
+    fresh:          serAnalyst(freshVideos || [], v => velMap.get(v.video_id) ?? null),
+  });
+
+  function renderAnalyst(s) {
+    const el = $("radarAnalyst");
+    if (!el) return;
+    const head = `<div class="analyst-head">🧠 ИИ-аналитик${s.date ? ` <span class="analyst-meta">${s.date}${s.model ? ` · ${s.model}` : ""}</span>` : ""}${s.body ? `<button class="analyst-refresh" id="analystRefresh">↻ Обновить</button>` : ""}</div>`;
+    if (s.loading) { el.innerHTML = head + `<div class="loading" style="padding:20px">Sonnet анализирует радар…</div>`; return; }
+    if (s.error)   { el.innerHTML = head + `<div class="empty" style="padding:16px">Ошибка: ${escapeHtml(s.error)}</div><div class="analyst-cta"><button class="copy-btn" id="analystRun">↻ Попробовать снова</button></div>`; }
+    else if (s.body) { el.innerHTML = head + `<div class="analyst-body">${marked.parse(s.body)}</div>`; }
+    else { el.innerHTML = head + `<div class="analyst-cta"><button class="copy-btn" id="analystRun">🧠 Получить анализ радара</button><span class="analyst-meta">Sonnet прочитает радар слоями и выделит лучшие возможности для small/mid каналов</span></div>`; }
+    $("analystRefresh")?.addEventListener("click", runAnalyst);
+    $("analystRun")?.addEventListener("click", runAnalyst);
+  }
+
+  async function runAnalyst() {
+    renderAnalyst({ loading: true });
+    try {
+      const { data, error } = await supabase.functions.invoke("radar-analyst", { body: analystPayload() });
+      if (error)        renderAnalyst({ error: error.message });
+      else if (data?.error) renderAnalyst({ error: data.error });
+      else              renderAnalyst({ body: data.analysis, date: data.analysis_date, model: data.model });
+    } catch (e) { renderAnalyst({ error: e.message }); }
+  }
+
+  $("radarAnalystBtn").addEventListener("click", runAnalyst);
+
+  // on load: show today's cached analysis if present, else a CTA
+  (async () => {
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const { data } = await supabase.from("radar_analysis")
+      .select("body, model, analysis_date").eq("analysis_date", todayIso).maybeSingle();
+    renderAnalyst(data ? { body: data.body, date: data.analysis_date, model: data.model } : {});
+  })();
 
   // copy prompt
   $("copyRadarBtn").addEventListener("click", () => {
