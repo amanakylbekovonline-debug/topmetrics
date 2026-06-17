@@ -776,6 +776,15 @@
   .analyst-body li { margin: 4px 0; }
   .analyst-body strong { color: #e5e5e5; }
   .analyst-body code { background: #221d3a; padding: 1px 5px; border-radius: 4px; font-size: 13px; color: #ddd6fe; }
+  .analyst-body table { border-collapse: collapse; margin: 8px 0; font-size: 13px; }
+  .analyst-body th, .analyst-body td { border: 1px solid #2a2542; padding: 5px 9px; text-align: left; }
+  .analyst-body th { color: #c4b5fd; background: #181527; }
+  .analyst-expanded { border-top: 1px solid rgba(139,92,246,.15); }
+  .analyst-expanded summary { cursor: pointer; padding: 12px 18px; font-size: 13px; font-weight: 600; color: #a78bfa; list-style: none; user-select: none; }
+  .analyst-expanded summary::-webkit-details-marker { display: none; }
+  .analyst-expanded summary::before { content: "▸ "; }
+  .analyst-expanded[open] summary::before { content: "▾ "; }
+  .analyst-expanded[open] summary { border-bottom: 1px solid rgba(139,92,246,.12); }
   .xviews-badge {
     position: absolute; bottom: 8px; left: 8px;
     padding: 3px 9px; border-radius: 999px;
@@ -2531,7 +2540,14 @@ async function loadRadar() {
     const head = `<div class="analyst-head">🧠 ИИ-аналитик${s.date ? ` <span class="analyst-meta">${s.date}${s.model ? ` · ${s.model}` : ""}</span>` : ""}${s.body ? `<button class="analyst-refresh" id="analystRefresh">↻ Обновить</button>` : ""}</div>`;
     if (s.loading) { el.innerHTML = head + `<div class="loading" style="padding:20px">Sonnet анализирует радар…</div>`; return; }
     if (s.error)   { el.innerHTML = head + `<div class="empty" style="padding:16px">Ошибка: ${escapeHtml(s.error)}</div><div class="analyst-cta"><button class="copy-btn" id="analystRun">↻ Попробовать снова</button></div>`; }
-    else if (s.body) { el.innerHTML = head + `<div class="analyst-body">${marked.parse(s.body)}</div>`; }
+    else if (s.body) {
+      // Split the two levels: short Daily Brief (always shown) + collapsed Expanded Notes.
+      const [brief, expanded] = s.body.split(/^===EXPANDED===\s*$/m);
+      let inner = `<div class="analyst-body">${marked.parse((brief || "").trim())}</div>`;
+      if (expanded && expanded.trim())
+        inner += `<details class="analyst-expanded"><summary>📓 Развёрнутые заметки (для Weekly Report)</summary><div class="analyst-body">${marked.parse(expanded.trim())}</div></details>`;
+      el.innerHTML = head + inner;
+    }
     else { el.innerHTML = head + `<div class="analyst-cta"><button class="copy-btn" id="analystRun">🧠 Получить анализ радара</button><span class="analyst-meta">Sonnet прочитает радар слоями и выделит лучшие возможности для small/mid каналов</span></div>`; }
     $("analystRefresh")?.addEventListener("click", runAnalyst);
     $("analystRun")?.addEventListener("click", runAnalyst);
