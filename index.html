@@ -2534,43 +2534,75 @@ async function loadRadar() {
     fresh:          serAnalyst(freshVideos || [], v => velMap.get(v.video_id) ?? null),
   });
 
-  function renderAnalyst(s) {
+  // Two modes: "🧠 Анализ" → short daily brief (cached, cheap). Expanded notes are a
+  // separate on-demand Sonnet call (saves tokens when you only need the brief).
+  let analyst = {}; // { brief, expanded, date, model }
+
+  function renderAnalyst(flags = {}) {
     const el = $("radarAnalyst");
     if (!el) return;
-    const head = `<div class="analyst-head">🧠 ИИ-аналитик${s.date ? ` <span class="analyst-meta">${s.date}${s.model ? ` · ${s.model}` : ""}</span>` : ""}${s.body ? `<button class="analyst-refresh" id="analystRefresh">↻ Обновить</button>` : ""}</div>`;
-    if (s.loading) { el.innerHTML = head + `<div class="loading" style="padding:20px">Sonnet анализирует радар…</div>`; return; }
-    if (s.error)   { el.innerHTML = head + `<div class="empty" style="padding:16px">Ошибка: ${escapeHtml(s.error)}</div><div class="analyst-cta"><button class="copy-btn" id="analystRun">↻ Попробовать снова</button></div>`; }
-    else if (s.body) {
-      // Split the two levels: short Daily Brief (always shown) + collapsed Expanded Notes.
-      const [brief, expanded] = s.body.split(/^===EXPANDED===\s*$/m);
-      let inner = `<div class="analyst-body">${marked.parse((brief || "").trim())}</div>`;
-      if (expanded && expanded.trim())
-        inner += `<details class="analyst-expanded"><summary>📓 Развёрнутые заметки (для Weekly Report)</summary><div class="analyst-body">${marked.parse(expanded.trim())}</div></details>`;
-      el.innerHTML = head + inner;
+    const a = analyst;
+    const head = `<div class="analyst-head">🧠 ИИ-аналитик${a.date ? ` <span class="analyst-meta">${a.date}${a.model ? ` · ${a.model}` : ""}</span>` : ""}${a.brief ? `<button class="analyst-refresh" id="analystRefresh">↻ Обновить</button>` : ""}</div>`;
+
+    if (flags.loading) { el.innerHTML = head + `<div class="loading" style="padding:20px">Sonnet готовит брифинг…</div>`; return; }
+    if (!a.brief) {
+      const err = flags.error ? `<div class="empty" style="padding:12px 16px 0">Ошибка: ${escapeHtml(flags.error)}</div>` : "";
+      el.innerHTML = head + err + `<div class="analyst-cta"><button class="copy-btn" id="analystRun">${flags.error ? "↻ Попробовать снова" : "🧠 Получить брифинг радара"}</button><span class="analyst-meta">короткий ежедневный разбор от Sonnet · развёрнутые заметки — отдельно по кнопке</span></div>`;
+      $("analystRun")?.addEventListener("click", runBrief);
+      return;
     }
-    else { el.innerHTML = head + `<div class="analyst-cta"><button class="copy-btn" id="analystRun">🧠 Получить анализ радара</button><span class="analyst-meta">Sonnet прочитает радар слоями и выделит лучшие возможности для small/mid каналов</span></div>`; }
-    $("analystRefresh")?.addEventListener("click", runAnalyst);
-    $("analystRun")?.addEventListener("click", runAnalyst);
+
+    let inner = `<div class="analyst-body">${marked.parse(a.brief.trim())}</div>`;
+    if (flags.expandedLoading) {
+      inner += `<div class="analyst-expanded"><div class="loading" style="padding:16px">Sonnet пишет развёрнутые заметки…</div></div>`;
+    } else if (a.expanded) {
+      inner += `<details class="analyst-expanded" open><summary>📓 Развёрнутые заметки (для Weekly Report)</summary><div class="analyst-body">${marked.parse(a.expanded.trim())}</div></details>`;
+    } else {
+      const eErr = flags.expandedError ? `<span class="analyst-meta" style="color:#fca5a5">Ошибка: ${escapeHtml(flags.expandedError)}</span> ` : "";
+      inner += `<div class="analyst-cta">${eErr}<button class="reco-mini" id="analystExpandBtn">📓 Показать развёрнутые заметки</button><span class="analyst-meta">отдельный вызов Sonnet — только когда нужно (экономит токены)</span></div>`;
+    }
+    el.innerHTML = head + inner;
+    $("analystRefresh")?.addEventListener("click", runBrief);
+    $("analystExpandBtn")?.addEventListener("click", runExpanded);
   }
 
-  async function runAnalyst() {
+  async function runBrief() {
+    analyst = {};
     renderAnalyst({ loading: true });
     try {
-      const { data, error } = await supabase.functions.invoke("radar-analyst", { body: analystPayload() });
-      if (error)        renderAnalyst({ error: error.message });
-      else if (data?.error) renderAnalyst({ error: data.error });
-      else              renderAnalyst({ body: data.analysis, date: data.analysis_date, model: data.model });
+      const { data, error } = await supabase.functions.invoke("radar-analyst", { body: { mode: "brief", ...analystPayload() } });
+      if (error)       { renderAnalyst({ error: error.message }); return; }
+      if (data?.error) { renderAnalyst({ error: data.error }); return; }
+      analyst = { brief: data.analysis, date: data.analysis_date, model: data.model };
+      renderAnalyst();
     } catch (e) { renderAnalyst({ error: e.message }); }
   }
 
-  $("radarAnalystBtn").addEventListener("click", runAnalyst);
+  async function runExpanded() {
+    if (!analyst.brief) return;
+    renderAnalyst({ expandedLoading: true });
+    try {
+      const { data, error } = await supabase.functions.invoke("radar-analyst", { body: { mode: "expanded", brief: analyst.brief, ...analystPayload() } });
+      if (error)       { renderAnalyst({ expandedError: error.message }); return; }
+      if (data?.error) { renderAnalyst({ expandedError: data.error }); return; }
+      analyst.expanded = data.analysis;
+      renderAnalyst();
+    } catch (e) { renderAnalyst({ expandedError: e.message }); }
+  }
 
-  // on load: show today's cached analysis if present, else a CTA
+  $("radarAnalystBtn").addEventListener("click", runBrief);
+
+  // on load: show today's cached brief if present (backward-compat: split off any old expanded)
   (async () => {
     const todayIso = new Date().toISOString().slice(0, 10);
     const { data } = await supabase.from("radar_analysis")
       .select("body, model, analysis_date").eq("analysis_date", todayIso).maybeSingle();
-    renderAnalyst(data ? { body: data.body, date: data.analysis_date, model: data.model } : {});
+    if (data) {
+      const [brief, expanded] = String(data.body || "").split(/^===EXPANDED===\s*$/m);
+      analyst = { brief: (brief || "").trim(), date: data.analysis_date, model: data.model };
+      if (expanded && expanded.trim()) analyst.expanded = expanded.trim();
+    } else analyst = {};
+    renderAnalyst();
   })();
 
   // copy prompt
