@@ -337,13 +337,29 @@
     cursor: pointer; text-align: left; transition: all .15s;
   }
   .status-btn:hover { border-color: #555; color: #e5e5e5; }
-  .status-btn.active.s-watch_later   { border-color: #888;    background: rgba(136,136,136,.1); color: #ccc; }
-  .status-btn.active.s-candidate     { border-color: #8b5cf6; background: rgba(139,92,246,.12); color: #c4b5fd; }
-  .status-btn.active.s-evidence      { border-color: #3b82f6; background: rgba(59,130,246,.12); color: #93c5fd; }
-  .status-btn.active.s-title_pattern { border-color: #f59e0b; background: rgba(245,158,11,.12); color: #fcd34d; }
-  .status-btn.active.s-small_breakout{ border-color: #22c55e; background: rgba(34,197,94,.1);  color: #86efac; }
-  .status-btn.active.s-used_in_report{ border-color: #10b981; background: rgba(16,185,129,.1); color: #6ee7b7; }
-  .status-btn.active.s-rejected      { border-color: #ef4444; background: rgba(239,68,68,.1);  color: #fca5a5; }
+  .status-btn.active.r-evidence   { border-color: #3b82f6; background: rgba(59,130,246,.12); color: #93c5fd; }
+  .status-btn.active.r-format     { border-color: #f59e0b; background: rgba(245,158,11,.12); color: #fcd34d; }
+  .status-btn.active.r-watchlist  { border-color: #888;    background: rgba(136,136,136,.12); color: #ccc; }
+  .status-btn.active.r-caution    { border-color: #ef4444; background: rgba(239,68,68,.1);  color: #fca5a5; }
+  .status-btn.active.lc-candidate { border-color: #8b5cf6; background: rgba(139,92,246,.12); color: #c4b5fd; }
+  .status-btn.active.lc-used      { border-color: #10b981; background: rgba(16,185,129,.1); color: #6ee7b7; }
+  .status-btn.active.lc-rejected  { border-color: #ef4444; background: rgba(239,68,68,.1);  color: #fca5a5; }
+  .status-btn.active.cf-high      { border-color: #10b981; background: rgba(16,185,129,.1); color: #6ee7b7; }
+  .status-btn.active.cf-med       { border-color: #f59e0b; background: rgba(245,158,11,.1); color: #fcd34d; }
+  .status-btn.active.cf-low       { border-color: #888;    background: rgba(136,136,136,.12); color: #ccc; }
+  .panel-input { width: 100%; box-sizing: border-box; background: #0e0e0e; border: 1px solid #2a2a2a; color: #e5e5e5; border-radius: 7px; padding: 7px 10px; font-size: 13px; outline: none; }
+  .panel-input:focus { border-color: #8b5cf6; }
+  /* Library evidence chips */
+  .lib-meta { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; align-items: center; }
+  .lib-chip { font-size: 11px; border-radius: 6px; padding: 2px 7px; border: 1px solid #2a2a2a; color: #9ca3af; background: #161616; }
+  .lib-chip.lib-narr     { color: #a78bfa; border-color: rgba(139,92,246,.3); }
+  .lib-chip.lc-candidate { color: #c4b5fd; border-color: rgba(139,92,246,.3); }
+  .lib-chip.lc-used      { color: #6ee7b7; border-color: rgba(16,185,129,.3); }
+  .lib-chip.lc-rejected  { color: #fca5a5; border-color: rgba(239,68,68,.3); }
+  .lib-chip.conf-high    { color: #6ee7b7; }
+  .lib-chip.conf-med     { color: #fcd34d; }
+  .lib-chip.conf-low     { color: #9ca3af; }
+  .lib-use { flex-basis: 100%; font-size: 12px; color: #999; margin-top: 2px; }
   /* Narrative tag on card */
   .narrative-tag {
     display: inline-block;
@@ -1083,13 +1099,13 @@ function xViews(v, st) {
 }
 
 /* ---------- Report Library ---------- */
-const reportMap = new Map(); // video_id → status
+const reportMap = new Map(); // video_id → role (presence = in library)
 
 async function loadReportMap() {
   const { data } = await supabase
     .from("report_candidates")
-    .select("video_id, status");
-  if (data) data.forEach(r => reportMap.set(r.video_id, r.status));
+    .select("video_id, role");
+  if (data) data.forEach(r => reportMap.set(r.video_id, r.role || "watchlist"));
 }
 
 function isInLibrary(id) { return reportMap.has(id); }
@@ -1108,13 +1124,25 @@ async function toggleBookmark(videoId) {
     reportMap.delete(videoId);
   } else {
     await supabase.from("report_candidates").upsert(
-      { video_id: videoId, status: "watch_later", updated_at: new Date().toISOString() },
+      { video_id: videoId, role: "watchlist", updated_at: new Date().toISOString() },
       { onConflict: "video_id" }
     );
-    reportMap.set(videoId, "watch_later");
+    reportMap.set(videoId, "watchlist");
   }
   updateBookmarkUI(videoId);
   if (currentPage === "saved") loadReportLibrary();
+}
+
+// Upsert one or more library fields for a video; classifying auto-creates the row
+// (= adds to library) and keeps the bookmark UI in sync.
+async function saveCand(videoId, patch) {
+  await supabase.from("report_candidates").upsert(
+    { video_id: videoId, ...patch, updated_at: new Date().toISOString() },
+    { onConflict: "video_id" }
+  );
+  if (patch.role) reportMap.set(videoId, patch.role);
+  else if (!reportMap.has(videoId)) reportMap.set(videoId, "watchlist");
+  updateBookmarkUI(videoId);
 }
 
 // kept as no-ops so any stale callers don't crash (removed below)
@@ -1164,6 +1192,7 @@ function cardHTML(v, opts = {}) {
         <div class="m-dim" title="Engagement Quality Score — устойчивость внимания. Низкий = всплеск ради превью, не повторится. Высокий = реальный, долгий интерес.">EQS<span>${(v.eqs||0).toFixed(2)}</span></div>
         <div class="m-eng" title="Вовлечённость, которую НЕ ловит EQS — 💬 комментарии на 1000 просмотров (прокси обсуждения / спорности) · 👍 лайки как % от просмотров">Вовлечённость<span>💬 ${cp1k.toFixed(1)}/1к · 👍 ${likePct.toFixed(1)}%</span></div>
       </div>
+      ${opts.libMeta || ""}
     </div>
   </a>`;
 }
@@ -1377,15 +1406,41 @@ async function loadVideos() {
 }
 
 /* ---------- Report Library ---------- */
-const STATUS_ORDER = [
-  { key: "watch_later",    label: "👀 Посмотреть позже"   },
-  { key: "candidate",      label: "📋 Кандидат в отчёт"  },
-  { key: "evidence",       label: "📊 Доказательство"    },
-  { key: "title_pattern",  label: "🏷️ Паттерн заголовка" },
-  { key: "small_breakout", label: "🚀 Прорыв малого"     },
-  { key: "used_in_report", label: "✅ В отчёте"          },
-  { key: "rejected",       label: "❌ Отклонено"         },
+// Two axes: ROLE (kind of save) is the primary grouping; STATUS is the lifecycle.
+const ROLE_ORDER = [
+  { key: "evidence",  label: "📊 Доказательство" },
+  { key: "format",    label: "🏷️ Формат" },
+  { key: "watchlist", label: "👀 Наблюдение" },
+  { key: "caution",   label: "⚠️ Осторожно" },
+  { key: "_none",     label: "📌 Без роли" },
 ];
+const ROLE_META = {
+  evidence:  { label: "Доказательство", emoji: "📊" },
+  format:    { label: "Формат",         emoji: "🏷️" },
+  watchlist: { label: "Наблюдение",     emoji: "👀" },
+  caution:   { label: "Осторожно",      emoji: "⚠️" },
+};
+const STATUS_META = {
+  candidate:      { label: "Кандидат",  cls: "lc-candidate" },
+  used_in_report: { label: "В отчёте",  cls: "lc-used" },
+  rejected:       { label: "Отклонено", cls: "lc-rejected" },
+};
+const CONF_META = {
+  high:   { label: "доверие выс.",  cls: "conf-high" },
+  medium: { label: "доверие сред.", cls: "conf-med" },
+  low:    { label: "доверие низ.",  cls: "conf-low" },
+};
+
+// Evidence chips shown on a library card (status · confidence · narrative · tags · use).
+function candChips(c) {
+  const chips = [];
+  if (c.status && STATUS_META[c.status])     chips.push(`<span class="lib-chip ${STATUS_META[c.status].cls}">${STATUS_META[c.status].label}</span>`);
+  if (c.confidence && CONF_META[c.confidence]) chips.push(`<span class="lib-chip ${CONF_META[c.confidence].cls}">${CONF_META[c.confidence].label}</span>`);
+  if (c.narrative)                            chips.push(`<span class="lib-chip lib-narr">${escapeHtml(c.narrative)}</span>`);
+  (c.tags || []).forEach(t => chips.push(`<span class="lib-chip lib-tag">#${escapeHtml(t)}</span>`));
+  const use = c.use_in_report ? `<div class="lib-use" title="Как использовать в отчёте">▸ ${escapeHtml(c.use_in_report)}</div>` : "";
+  return (chips.length || use) ? `<div class="lib-meta">${chips.join("")}${use}</div>` : "";
+}
 
 let libActiveTab = "all"; // persists while page is open
 
@@ -1397,7 +1452,7 @@ async function loadReportLibrary() {
 
   const { data: rows, error } = await supabase
     .from("report_candidates")
-    .select("video_id, status, notes, updated_at, videos(video_id, title, thumbnail_url, view_count, like_count, vph, outlier_score, eqs, published_at, duration_seconds, channels(title, subscriber_count))")
+    .select("video_id, role, status, confidence, narrative, tags, use_in_report, notes, updated_at, videos(video_id, title, thumbnail_url, view_count, like_count, comment_count, vph, outlier_score, eqs, published_at, duration_seconds, channels(title, subscriber_count))")
     .order("updated_at", { ascending: false });
 
   if (error) {
@@ -1410,22 +1465,20 @@ async function loadReportLibrary() {
     return;
   }
 
-  // group by status
+  // group by ROLE; store the full candidate row so cards can render evidence chips
   const groups = new Map();
-  STATUS_ORDER.forEach(s => groups.set(s.key, []));
+  ROLE_ORDER.forEach(s => groups.set(s.key, []));
   rows.forEach(r => {
-    const v = r.videos;
-    if (!v) return;
-    const key = r.status || "watch_later";
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push(v);
-    renderedVideos.set(v.video_id, v);
+    if (!r.videos) return;
+    const key = ROLE_META[r.role] ? r.role : "_none";
+    groups.get(key).push(r);
+    renderedVideos.set(r.videos.video_id, r.videos);
   });
 
   const totalCount = rows.filter(r => r.videos).length;
 
-  // build tabs — only for statuses that have videos
-  const activeTabs = STATUS_ORDER.filter(s => (groups.get(s.key) || []).length > 0);
+  // build tabs — only for roles that have videos
+  const activeTabs = ROLE_ORDER.filter(s => (groups.get(s.key) || []).length > 0);
   if (libTabs && activeTabs.length > 1) {
     const tabDefs = [{ key: "all", label: "Все", count: totalCount }, ...activeTabs.map(s => ({ key: s.key, label: s.label, count: groups.get(s.key).length }))];
     libTabs.innerHTML = tabDefs.map(t => `
@@ -1449,23 +1502,25 @@ function renderLibraryContent(groups, totalCount) {
   let html = "";
   let count = 0;
 
+  const cards = list => list.map(r => cardHTML(r.videos, { libMeta: candChips(r) })).join("");
+
   if (filter === "all") {
-    for (const { key, label } of STATUS_ORDER) {
-      const vids = groups.get(key) || [];
-      if (!vids.length) continue;
-      count += vids.length;
+    for (const { key, label } of ROLE_ORDER) {
+      const list = groups.get(key) || [];
+      if (!list.length) continue;
+      count += list.length;
       html += `
         <div class="library-group">
-          <div class="library-group-title">${label} <span>${vids.length}</span></div>
-          <div class="grid">${vids.map(v => cardHTML(v)).join("")}</div>
+          <div class="library-group-title">${label} <span>${list.length}</span></div>
+          <div class="grid">${cards(list)}</div>
         </div>`;
     }
   } else {
-    const vids = groups.get(filter) || [];
-    count = vids.length;
-    html = vids.length
-      ? `<div class="grid" style="padding-top:16px">${vids.map(v => cardHTML(v)).join("")}</div>`
-      : '<div class="empty" style="padding-top:20px">Нет видео с этим статусом.</div>';
+    const list = groups.get(filter) || [];
+    count = list.length;
+    html = list.length
+      ? `<div class="grid" style="padding-top:16px">${cards(list)}</div>`
+      : '<div class="empty" style="padding-top:20px">Нет видео с этой ролью.</div>';
   }
 
   savedStats.textContent = `${count} видео`;
@@ -3291,25 +3346,39 @@ async function openPanel(v) {
 
   const { data: cand } = await supabase
     .from("report_candidates")
-    .select("status, notes")
+    .select("role, status, confidence, narrative, tags, use_in_report, notes")
     .eq("video_id", v.video_id)
     .maybeSingle();
 
-  const status  = cand?.status || null;
-  const notes   = cand?.notes  || "";
+  const role        = cand?.role || null;
+  const status      = cand?.status || null;
+  const confidence  = cand?.confidence || null;
+  const narrative   = cand?.narrative || themeTagRu(narrativeOf(v.title)) || ""; // auto-prefill
+  const tagsStr     = (cand?.tags || []).join(", ");
+  const useInReport = cand?.use_in_report || "";
+  const notes       = cand?.notes || "";
   const subs    = v.channels?.subscriber_count || 0;
   const sig     = sigLabel(v.outlier_score || 0);
   const bullets = generateWhyItMatters(v);
 
-  const statusCfg = [
-    { key: "watch_later",    cls: "s-watch_later",    label: "👀 Позже"            },
-    { key: "candidate",      cls: "s-candidate",      label: "📋 Кандидат"         },
-    { key: "evidence",       cls: "s-evidence",       label: "📊 Доказательство"   },
-    { key: "title_pattern",  cls: "s-title_pattern",  label: "🏷️ Паттерн заголовка" },
-    { key: "small_breakout", cls: "s-small_breakout", label: "🚀 Прорыв малого"    },
-    { key: "used_in_report", cls: "s-used_in_report",  label: "✅ В отчёте"         },
-    { key: "rejected",       cls: "s-rejected",       label: "❌ Отклонено"        },
+  const roleBtns = [
+    { key: "evidence",  cls: "r-evidence",  label: "📊 Доказательство" },
+    { key: "format",    cls: "r-format",    label: "🏷️ Формат" },
+    { key: "watchlist", cls: "r-watchlist", label: "👀 Наблюдение" },
+    { key: "caution",   cls: "r-caution",   label: "⚠️ Осторожно" },
   ];
+  const statusBtns = [
+    { key: "candidate",      cls: "lc-candidate", label: "📋 Кандидат" },
+    { key: "used_in_report", cls: "lc-used",      label: "✅ В отчёте" },
+    { key: "rejected",       cls: "lc-rejected",  label: "❌ Отклонено" },
+  ];
+  const confBtns = [
+    { key: "high",   cls: "cf-high", label: "Высокое" },
+    { key: "medium", cls: "cf-med",  label: "Среднее" },
+    { key: "low",    cls: "cf-low",  label: "Низкое" },
+  ];
+  const btnRow = (arr, field, cur) =>
+    `<div class="panel-status-row">${arr.map(s => `<button class="status-btn ${s.cls} ${cur === s.key ? "active" : ""}" data-field="${field}" data-val="${s.key}">${s.label}</button>`).join("")}</div>`;
 
   panelBody.innerHTML = `
     <img src="${escapeHtml(v.thumbnail_url)}" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block;"/>
@@ -3351,48 +3420,35 @@ async function openPanel(v) {
     </div>
 
     <div class="panel-section">
-      <div class="panel-section-title">Статус для отчёта</div>
-      <div class="panel-status-sublabel">Тип сохранения</div>
-      <div class="panel-status-row" style="margin-bottom:10px">
-        ${statusCfg.filter(s => !["used_in_report","rejected"].includes(s.key)).map(s => `
-          <button class="status-btn ${s.cls} ${status === s.key ? "active" : ""}" data-status="${s.key}">
-            ${s.label}
-          </button>`).join("")}
-      </div>
-      <div class="panel-status-sublabel">Финальный статус</div>
-      <div class="panel-status-row">
-        ${statusCfg.filter(s => ["used_in_report","rejected"].includes(s.key)).map(s => `
-          <button class="status-btn ${s.cls} ${status === s.key ? "active" : ""}" data-status="${s.key}">
-            ${s.label}
-          </button>`).join("")}
-      </div>
+      <div class="panel-section-title">Классификация</div>
+      <div class="panel-status-sublabel">Роль</div>
+      ${btnRow(roleBtns, "role", role)}
+      <div class="panel-status-sublabel" style="margin-top:12px">Статус (жизненный цикл)</div>
+      ${btnRow(statusBtns, "status", status)}
+      <div class="panel-status-sublabel" style="margin-top:12px">Доверие</div>
+      ${btnRow(confBtns, "confidence", confidence)}
     </div>
 
     <div class="panel-section">
-      <div class="panel-section-title">Заметки</div>
-      <textarea class="panel-notes" id="panelNotes" placeholder="Добавьте заметки по анализу...">${escapeHtml(notes)}</textarea>
+      <div class="panel-status-sublabel">Нарратив</div>
+      <input class="panel-input" id="candNarrative" placeholder="Тема (авто из заголовка, можно поправить)" value="${escapeHtml(narrative)}"/>
+      <div class="panel-status-sublabel" style="margin-top:12px">Теги (через запятую)</div>
+      <input class="panel-input" id="candTags" placeholder="small_breakout, evergreen, double_layer" value="${escapeHtml(tagsStr)}"/>
+      <div class="panel-status-sublabel" style="margin-top:12px">Как использовать в отчёте</div>
+      <textarea class="panel-notes" id="candUse" placeholder="Напр.: взять формулу заголовка для retirement-серии">${escapeHtml(useInReport)}</textarea>
+      <div class="panel-status-sublabel" style="margin-top:12px">Почему сохранено</div>
+      <textarea class="panel-notes" id="panelNotes" placeholder="Напр.: 79K подп., x5.1, в двух слоях радара">${escapeHtml(notes)}</textarea>
       <div class="panel-saved-note" id="panelSavedNote"></div>
     </div>`;
 
-  // status toggle
-  panelBody.querySelectorAll(".status-btn").forEach(btn => {
+  // role / status / confidence — single-select per field row, click active = clear (null)
+  panelBody.querySelectorAll(".status-btn[data-field]").forEach(btn => {
     btn.addEventListener("click", async () => {
-      const newStatus = btn.dataset.status;
-      const isActive  = btn.classList.contains("active");
-      panelBody.querySelectorAll(".status-btn").forEach(b => b.classList.remove("active"));
-      if (!isActive) btn.classList.add("active");
-      if (isActive) {
-        // deactivate: delete row entirely so it's fully out of library
-        await supabase.from("report_candidates").delete().eq("video_id", v.video_id);
-        reportMap.delete(v.video_id);
-      } else {
-        await supabase.from("report_candidates").upsert(
-          { video_id: v.video_id, status: newStatus, updated_at: new Date().toISOString() },
-          { onConflict: "video_id" }
-        );
-        reportMap.set(v.video_id, newStatus);
-      }
-      updateBookmarkUI(v.video_id);
+      const field = btn.dataset.field, val = btn.dataset.val;
+      const wasActive = btn.classList.contains("active");
+      btn.closest(".panel-status-row").querySelectorAll(".status-btn").forEach(b => b.classList.remove("active"));
+      if (!wasActive) btn.classList.add("active");
+      await saveCand(v.video_id, { [field]: wasActive ? null : val });
     });
   });
 
@@ -3407,19 +3463,24 @@ async function openPanel(v) {
     setTimeout(() => { btn.textContent = "Копировать для отчёта"; btn.classList.remove("copied"); }, 2000);
   });
 
-  // notes — debounced save
-  $("panelNotes").addEventListener("input", e => {
-    clearTimeout(notesDebounce);
-    $("panelSavedNote").textContent = "Сохраняю...";
-    notesDebounce = setTimeout(async () => {
-      await supabase.from("report_candidates").upsert(
-        { video_id: v.video_id, notes: e.target.value, updated_at: new Date().toISOString() },
-        { onConflict: "video_id" }
-      );
-      $("panelSavedNote").textContent = "Сохранено ✓";
-      setTimeout(() => { if ($("panelSavedNote")) $("panelSavedNote").textContent = ""; }, 2000);
-    }, 900);
-  });
+  // text fields — debounced save (narrative / tags[] / use_in_report / notes)
+  const wireField = (id, key, transform) => {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener("input", () => {
+      clearTimeout(notesDebounce);
+      $("panelSavedNote").textContent = "Сохраняю...";
+      notesDebounce = setTimeout(async () => {
+        await saveCand(v.video_id, { [key]: transform ? transform(el.value) : el.value });
+        $("panelSavedNote").textContent = "Сохранено ✓";
+        setTimeout(() => { if ($("panelSavedNote")) $("panelSavedNote").textContent = ""; }, 2000);
+      }, 800);
+    });
+  };
+  wireField("candNarrative", "narrative");
+  wireField("candTags", "tags", s => s.split(",").map(t => t.trim()).filter(Boolean));
+  wireField("candUse", "use_in_report");
+  wireField("panelNotes", "notes");
 }
 
 // panel close button
