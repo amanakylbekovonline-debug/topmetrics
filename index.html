@@ -360,6 +360,11 @@
   .lib-chip.conf-med     { color: #fcd34d; }
   .lib-chip.conf-low     { color: #9ca3af; }
   .lib-use { flex-basis: 100%; font-size: 12px; color: #999; margin-top: 2px; }
+  .lib-rec-btn { font-size: 11px; border-radius: 6px; padding: 2px 8px; cursor: pointer; margin-left: auto;
+    border: 1px solid rgba(139,92,246,.35); background: rgba(139,92,246,.08); color: #c4b5fd; }
+  .lib-rec-btn:hover:not(:disabled) { background: rgba(139,92,246,.18); }
+  .lib-rec-btn:disabled { opacity: .6; cursor: default; }
+  .lib-rec-done { font-size: 11px; color: #6ee7b7; margin-left: auto; padding: 2px 4px; }
   /* Narrative tag on card */
   .narrative-tag {
     display: inline-block;
@@ -1487,7 +1492,10 @@ const CONF_META = {
   low:    { label: "доверие низ.",  cls: "conf-low" },
 };
 
-// Evidence chips shown on a library card (status · confidence · narrative · tags · use).
+const libRowMap = new Map();    // video_id → candidate row (for the "→ в рекомендации" action)
+const recSourceSet = new Set(); // video_ids already spawned into recommendations
+
+// Evidence chips shown on a library card (status · confidence · narrative · tags · use · → reco).
 function candChips(c) {
   const chips = [];
   if (c.status && STATUS_META[c.status])     chips.push(`<span class="lib-chip ${STATUS_META[c.status].cls}">${STATUS_META[c.status].label}</span>`);
@@ -1495,7 +1503,10 @@ function candChips(c) {
   if (c.narrative)                            chips.push(`<span class="lib-chip lib-narr">${escapeHtml(c.narrative)}</span>`);
   (c.tags || []).forEach(t => chips.push(`<span class="lib-chip lib-tag">#${escapeHtml(t)}</span>`));
   const use = c.use_in_report ? `<div class="lib-use" title="Как использовать в отчёте">▸ ${escapeHtml(c.use_in_report)}</div>` : "";
-  return (chips.length || use) ? `<div class="lib-meta">${chips.join("")}${use}</div>` : "";
+  const reco = recSourceSet.has(c.video_id)
+    ? `<span class="lib-rec-done" title="уже создана рекомендация">✓ в рекомендациях</span>`
+    : `<button class="lib-rec-btn" data-rec-vid="${escapeHtml(c.video_id)}" title="Создать открытую рекомендацию из этой карточки">→ в рекомендации</button>`;
+  return `<div class="lib-meta">${chips.join("")}${use}${reco}</div>`;
 }
 
 let libActiveTab = "all"; // persists while page is open
@@ -1521,11 +1532,21 @@ async function loadReportLibrary() {
     return;
   }
 
-  // group by ROLE; store the full candidate row so cards can render evidence chips
+  // which library videos already spawned a recommendation (for the "→ в рекомендации" state)
+  recSourceSet.clear();
+  try {
+    const { data: recs } = await supabase.from("recommendations")
+      .select("source_video_id").not("source_video_id", "is", null);
+    (recs || []).forEach(x => recSourceSet.add(x.source_video_id));
+  } catch { /* source_video_id column may not exist pre-migration */ }
+
+  // group by ROLE; store the full candidate row so cards can render evidence chips + the reco action
+  libRowMap.clear();
   const groups = new Map();
   ROLE_ORDER.forEach(s => groups.set(s.key, []));
   rows.forEach(r => {
     if (!r.videos) return;
+    libRowMap.set(r.video_id, r);
     const key = ROLE_META[r.role] ? r.role : "_none";
     groups.get(key).push(r);
     renderedVideos.set(r.videos.video_id, r.videos);
@@ -3571,8 +3592,33 @@ document.addEventListener("click", async e => {
   await saveCand(b.dataset.vid, { role: wasActive ? null : b.dataset.qr });
 });
 
+// "→ в рекомендации" — spawn an OPEN recommendation from a library evidence card
+document.addEventListener("click", async e => {
+  const b = e.target.closest(".lib-rec-btn");
+  if (!b) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const row = libRowMap.get(b.dataset.recVid);
+  if (!row || !row.videos) return;
+  b.disabled = true; b.textContent = "Создаю…";
+  const v = row.videos;
+  const idea  = (row.use_in_report || "").trim() || v.title;
+  const theme = row.narrative || themeTagRu(narrativeOf(v.title)) || "";
+  const notes = `Из библиотеки: «${v.title}» — ${v.channels?.title || "—"}, x${(v.outlier_score || 0).toFixed(1)}${row.notes ? ` · ${row.notes}` : ""}`;
+  const { error } = await supabase.from("recommendations").insert({
+    idea, theme, notes, source_video_id: b.dataset.recVid, status: "open",
+  });
+  if (error) {
+    b.disabled = false; b.textContent = "→ в рекомендации";
+    alert("Не удалось создать рекомендацию: " + error.message);
+    return;
+  }
+  recSourceSet.add(b.dataset.recVid);
+  b.outerHTML = `<span class="lib-rec-done" title="уже создана рекомендация">✓ в рекомендациях</span>`;
+});
+
 document.addEventListener("click", e => {
-  if (e.target.closest(".save-btn") || e.target.closest(".quick-role")) return;
+  if (e.target.closest(".save-btn") || e.target.closest(".quick-role") || e.target.closest(".lib-rec-btn")) return;
   const card = e.target.closest(".card[data-id]");
   if (!card) return;
   e.preventDefault();
