@@ -699,6 +699,35 @@
   .qr-btn.active.r-format    { border-color: #f59e0b; background: rgba(245,158,11,.18); }
   .qr-btn.active.r-watchlist { border-color: #888;    background: rgba(136,136,136,.2); }
   .qr-btn.active.r-caution   { border-color: #ef4444; background: rgba(239,68,68,.18); }
+  /* Weekly Report redesign — brief + narrative cards */
+  .wb-panel { border: 1px solid rgba(139,92,246,.3); border-radius: 12px; background: #14121f; margin-bottom: 18px; }
+  .wb-head { display: flex; align-items: center; gap: 10px; padding: 12px 16px; font-weight: 600; color: #e5e5e5; border-bottom: 1px solid rgba(139,92,246,.15); }
+  .wb-body { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; color: #cfcfe0; }
+  .wb-row { line-height: 1.45; }
+  .wb-tag { display: inline-block; font-size: 11px; font-weight: 700; border-radius: 6px; padding: 1px 8px; margin-right: 8px; }
+  .wb-tag.wb-main { color: #6ee7b7; background: rgba(34,197,94,.12); }
+  .wb-tag.wb-sec  { color: #fcd34d; background: rgba(245,158,11,.12); }
+  .wb-tag.wb-weak { color: #9ca3af; background: #1a1a1a; }
+  .wb-ok { color: #6ee7b7; } .wb-warn { color: #fca5a5; }
+  .wb-do { margin-top: 4px; padding-top: 8px; border-top: 1px solid #1f1f1f; color: #c4b5fd; }
+  .narr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; margin-bottom: 18px; }
+  .narr-card { border: 1px solid #2a2a2a; border-radius: 12px; background: #141414; padding: 14px; }
+  .narr-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+  .narr-title { font-weight: 600; color: #e5e5e5; }
+  .narr-metrics { font-size: 12px; color: #9ca3af; }
+  .narr-verdict { font-size: 13px; color: #c4b5fd; margin: 8px 0; }
+  .narr-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .narr-ev-btn, .narr-save-btn { font-size: 12px; border-radius: 7px; padding: 5px 11px; cursor: pointer; border: 1px solid #2a2a2a; background: #1a1a1a; color: #aaa; }
+  .narr-ev-btn:hover, .narr-save-btn:hover { border-color: #555; color: #e5e5e5; }
+  .narr-save-btn { color: #c4b5fd; border-color: rgba(139,92,246,.3); }
+  .narr-save-btn.done { color: #6ee7b7; border-color: rgba(16,185,129,.3); }
+  .narr-evidence { display: none; margin-top: 12px; border-top: 1px solid #1f1f1f; padding-top: 12px; }
+  .narr-card.ev-open .narr-evidence { display: block; }
+  .wow-collapsed { border-top: 1px solid #1f1f1f; margin-top: 8px; }
+  .wow-collapsed summary { cursor: pointer; padding: 12px 2px; color: #888; font-size: 13px; font-weight: 600; list-style: none; }
+  .wow-collapsed summary::-webkit-details-marker { display: none; }
+  .wow-collapsed summary::before { content: "▸ "; }
+  .wow-collapsed[open] summary::before { content: "▾ "; }
   .radar-row {
     display: flex; align-items: flex-start; gap: 12px;
     padding: 11px 14px; border-radius: 10px;
@@ -2252,54 +2281,134 @@ async function loadWeeklyReport() {
   const weekLabel = new Date(Date.now() - 7 * 86400000)
     .toLocaleDateString("ru-RU", { month: "short", day: "numeric", year: "numeric" });
 
-  const topRows = allVideos.slice(0, 20).map(v => {
-    const subs = v.channels?.subscriber_count || 0;
-    const isSmall = subs > 0 && subs < 300000;
-    const velHtml = v.vel7d != null
-      ? `<div class="radar-vel">+${fmt(v.vel7d)}</div>`
-      : `<div class="radar-vel no-data">—</div>`;
+  // evidence videos grouped by narrative (for the per-card evidence tiles)
+  const evByNarr = new Map();
+  allVideos.forEach(v => {
+    const g = narrativeOf(v.title); if (!g) return;
+    if (!evByNarr.has(g.id)) evByNarr.set(g.id, []);
+    evByNarr.get(g.id).push(v);
+  });
+  const idOf = label => SIGNAL_GROUPS.find(x => x.label === label)?.id || "";
+
+  // ---- computed Weekly Brief: rank narratives from the WoW data ----
+  const satW = { open: 3, hivar: 2, warm: 1, sat: 0, thin: -1 };
+  const confW = { high: 2, med: 1, low: 0 };
+  const narrs = wow.all.filter(g => g.cur.total > 0);
+  const scored = narrs
+    .map(g => ({ g, s: (satW[g.sat.key] ?? 0) + (confW[g.conf.key] ?? 0)
+      + (g.cur.cN > 0 && g.cur.creatorLift >= g.cur.bigLift ? 1 : 0) + Math.min(g.cur.n, 5) * 0.2 }))
+    .sort((a, b) => b.s - a.s);
+  const primary   = scored[0]?.g || null;
+  const crowded   = narrs.filter(g => g.sat.key === "sat" && g.cur.n > 0 && g !== primary).sort((a, b) => b.cur.n - a.cur.n)[0];
+  const secondary = crowded || scored[1]?.g || null;
+  const weak      = narrs.filter(g => (g.conf.key === "low" || g.cur.topShare > 0.5) && g.cur.n > 0 && g !== primary && g !== secondary)
+    .sort((a, b) => b.cur.n - a.cur.n)[0] || null;
+
+  const bLine = g => g
+    ? `<b>${escapeHtml(labelRuOf(g.label))}</b> — ${SAT_RU[g.sat.key] || g.sat.txt}, ${g.cur.n}/${g.cur.total} (lift ${g.cur.avgO.toFixed(1)}x · ${g.cur.ch} кан. · доверие ${CONF_RU[g.conf.key] || g.conf.txt})`
+    : "—";
+  const briefHTML = `
+    <div class="wb-panel">
+      <div class="wb-head">📝 Weekly Brief
+        <button class="copy-btn analyst-trigger" id="weeklyAIBtn" style="margin-left:auto">🧠 Sonnet-разбор</button>
+      </div>
+      <div class="wb-body">
+        <div class="wb-row"><span class="wb-tag wb-main">Главный</span> ${bLine(primary)}${primary && primary.cur.cN > 0 && primary.cur.creatorLift >= primary.cur.bigLift ? ` · <span class="wb-ok">small ≥ large ✓</span>` : ""}</div>
+        <div class="wb-row"><span class="wb-tag wb-sec">Вторичный</span> ${bLine(secondary)}${secondary && secondary.sat.key === "sat" ? ` · <span class="wb-warn">шумно/забито</span>` : ""}</div>
+        ${weak ? `<div class="wb-row"><span class="wb-tag wb-weak">Слабый</span> ${bLine(weak)} · <span class="wb-warn">держится на одном канале</span></div>` : ""}
+        <div class="wb-do">▸ Что делать: собирать <b>${primary ? escapeHtml(labelRuOf(primary.label)) : "—"}</b> evidence + формулы заголовков.</div>
+      </div>
+      <div id="weeklyAI"></div>
+    </div>`;
+
+  // ---- narrative cards (strongest first) with inline collapsible evidence tiles ----
+  const narrVerdict = g =>
+    (g.sat.key === "open" || g.sat.key === "hivar") ? (g.conf.key !== "low" ? "сильный кандидат в weekly report" : "интересно, но мало данных")
+    : g.sat.key === "sat" ? "много шума — осторожно"
+    : (g.conf.key === "low" || g.cur.topShare > 0.5) ? "слабо — держится на одном канале"
+    : g.sat.key === "thin" ? "мало данных" : "наблюдать";
+  const evTiles = id => {
+    const list = (evByNarr.get(id) || []).slice(0, 8);
+    return list.length ? `<div class="grid">${list.map(v => cardHTML(v, { quickRole: reportMap.get(v.video_id) || "" })).join("")}</div>`
+      : `<div class="empty" style="padding:14px 0">нет evidence-видео в топ-100 недели</div>`;
+  };
+  const narrCardsHTML = scored.map(({ g }) => {
+    const id = idOf(g.label);
+    const top = (g.cur.topShare * 100).toFixed(0);
+    const small = g.cur.cN > 0 ? `small lift ${g.cur.creatorLift.toFixed(1)}x${g.cur.bN ? ` vs large ${g.cur.bigLift.toFixed(1)}x` : ""}` : "нет &lt;300K";
+    const evN = (evByNarr.get(id) || []).length;
     return `
-      <a class="radar-row" href="https://youtube.com/watch?v=${encodeURIComponent(v.video_id)}" target="_blank" rel="noopener">
-        <img class="radar-thumb" src="${escapeHtml(v.thumbnail_url)}" alt="" loading="lazy"/>
-        <div class="radar-info">
-          <div class="radar-title">${escapeHtml(v.title)}</div>
-          <div class="radar-meta">${escapeHtml(v.channels?.title||"—")} · ${ago(v.published_at)} · ${fmt(subs)} подп.${isSmall?" 🟢":""}</div>
+      <div class="narr-card" id="narrcard-${id}">
+        <div class="narr-head">
+          <span class="wow-sat sat-${g.sat.key}">${g.sat.emoji} ${SAT_RU[g.sat.key] || g.sat.txt}</span>
+          <span class="wow-conf conf-${g.conf.key}">дов ${CONF_RU[g.conf.key] || g.conf.txt}</span>
+          <span class="narr-title">${escapeHtml(labelRuOf(g.label))}</span>
         </div>
-        <div class="radar-metrics">
-          ${velHtml}
-          <div class="radar-outlier">${(v.outlier_score||0).toFixed(1)}x</div>
-          <div>${fmt(v.vph||0)}/ч</div>
+        <div class="narr-metrics">${g.cur.n} outliers · ${g.cur.ch} кан. · median lift ${g.cur.medO.toFixed(1)}x · ${small} · top ${top}%</div>
+        <div class="narr-verdict">▸ ${narrVerdict(g)}</div>
+        <div class="narr-actions">
+          <button class="narr-ev-btn" data-narrev="${id}">Открыть evidence (${evN})</button>
+          <button class="narr-save-btn" data-narrsave="${id}" data-narrlabel="${escapeHtml(labelRuOf(g.label))}">＋ Сохранить нарратив</button>
         </div>
-      </a>`;
+        <div class="narr-evidence" id="narrev-${id}">${evTiles(id)}</div>
+      </div>`;
   }).join("");
 
   content.innerHTML = `
     <div class="radar-head">
-      <div class="stats">📝 Неделя ${weekLabel} · ${allVideos.length} видео · медиана аутлайера ${medianOutlier}x</div>
+      <div class="stats">📝 Неделя ${weekLabel} · ${allVideos.length} видео · медиана аутлайера ${medianOutlier}x · 🟢${stats.small} 🟡${stats.mid} ⚫${stats.large}</div>
       <button class="copy-btn" id="copyReportBtn">📋 Скопировать промпт отчёта</button>
       <button class="ac-cancel" id="reportSaveBtn" style="margin-left:0" title="Открыть форму Архива, предзаполненную как Недельный отчёт, чтобы вставить готовый отчёт">🗂️ Сохранить как отчёт</button>
     </div>
 
-    <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;">
-      <div style="background:#161616;border:1px solid #1f1f1f;border-radius:10px;padding:12px 18px;font-size:13px;">
-        🟢 Малые <strong style="color:#e5e5e5">${stats.small}</strong>
-      </div>
-      <div style="background:#161616;border:1px solid #1f1f1f;border-radius:10px;padding:12px 18px;font-size:13px;">
-        🟡 Средние <strong style="color:#e5e5e5">${stats.mid}</strong>
-      </div>
-      <div style="background:#161616;border:1px solid #1f1f1f;border-radius:10px;padding:12px 18px;font-size:13px;">
-        ⚫ Крупные <strong style="color:#e5e5e5">${stats.large}</strong>
-      </div>
-      <div style="background:#161616;border:1px solid #1f1f1f;border-radius:10px;padding:12px 18px;font-size:13px;">
-        ⚡ Данные динамики <strong style="color:#e5e5e5">${velMap7.size}</strong> видео
-      </div>
-    </div>
+    ${briefHTML}
 
-    ${renderWoWPanel(wow)}
+    <div class="radar-section-title">🧭 Нарративы недели <span>${scored.length}</span> <span class="rst-note">сильнейшие сверху · «Открыть evidence» → плитки с quick-role</span></div>
+    <div class="narr-grid">${narrCardsHTML || '<div class="empty">Недостаточно данных для нарративов.</div>'}</div>
 
-    <div class="radar-section-title">🏆 Топ-аутлайеры недели <span>${allVideos.length} видео</span></div>
-    <div>${topRows}</div>
-    ${allVideos.length > 20 ? `<div class="stats" style="margin-top:8px">+ ещё ${allVideos.length - 20} видео включены в промпт</div>` : ""}`;
+    <details class="wow-collapsed">
+      <summary>📊 Показать технические метрики (Narrative Evidence)</summary>
+      ${renderWoWPanel(wow)}
+    </details>`;
+
+  // computed-brief AI deepen (Sonnet, on demand)
+  const weeklyAIPayload = () => ({
+    mode: "weekly",
+    weekLabel,
+    narratives: scored.map(({ g }) => ({
+      label: g.label, sat: g.sat.txt, conf: g.conf.txt,
+      n: g.cur.n, total: g.cur.total, ch: g.cur.ch,
+      lift: +g.cur.avgO.toFixed(1), medLift: +g.cur.medO.toFixed(1), topShare: +(g.cur.topShare).toFixed(2),
+      smallLift: +g.cur.creatorLift.toFixed(1), bigLift: +g.cur.bigLift.toFixed(1), dN: g.dN,
+    })),
+  });
+  let weeklyAIDone = false;
+  $("weeklyAIBtn").addEventListener("click", async () => {
+    const box = $("weeklyAI"), btn = $("weeklyAIBtn");
+    if (weeklyAIDone) { box.innerHTML = ""; weeklyAIDone = false; btn.textContent = "🧠 Sonnet-разбор"; return; }
+    btn.disabled = true; box.innerHTML = `<div class="loading" style="padding:16px">Sonnet разбирает неделю…</div>`;
+    try {
+      const { data, error } = await supabase.functions.invoke("radar-analyst", { body: weeklyAIPayload() });
+      if (error || data?.error) box.innerHTML = `<div class="empty" style="padding:14px">Ошибка: ${escapeHtml(error?.message || data.error)}</div>`;
+      else { box.innerHTML = `<div class="analyst-body" style="padding:8px 4px 4px">${marked.parse(data.analysis || "")}</div>`; weeklyAIDone = true; btn.textContent = "🧠 Скрыть Sonnet"; }
+    } catch (e) { box.innerHTML = `<div class="empty" style="padding:14px">Ошибка: ${escapeHtml(e.message)}</div>`; }
+    btn.disabled = false;
+  });
+
+  // narrative card actions: toggle evidence / save narrative as an open recommendation
+  content.querySelectorAll(".narr-ev-btn").forEach(b =>
+    b.addEventListener("click", () => $("narrcard-" + b.dataset.narrev)?.classList.toggle("ev-open")));
+  content.querySelectorAll(".narr-save-btn").forEach(b =>
+    b.addEventListener("click", async () => {
+      b.disabled = true; const orig = b.textContent; b.textContent = "Создаю…";
+      const label = b.dataset.narrlabel;
+      const { error } = await supabase.from("recommendations").insert({
+        idea: `Снять видео на тему «${label}» — сильный недельный нарратив`,
+        theme: label, status: "open", notes: "из Weekly Brief (нарратив недели)",
+      });
+      if (error) { b.disabled = false; b.textContent = orig; alert("Не удалось сохранить: " + error.message); return; }
+      b.textContent = "✓ в рекомендациях"; b.classList.add("done");
+    }));
 
   $("copyReportBtn").addEventListener("click", () => {
     const prompt = buildWeeklyPrompt(allVideos, accelVideos, clusters || [], insights, stats, wow);
