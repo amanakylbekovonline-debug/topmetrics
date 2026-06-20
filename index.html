@@ -707,6 +707,7 @@
   .wb-tag { display: inline-block; font-size: 11px; font-weight: 700; border-radius: 6px; padding: 1px 8px; margin-right: 8px; }
   .wb-tag.wb-main { color: #6ee7b7; background: rgba(34,197,94,.12); }
   .wb-tag.wb-sec  { color: #fcd34d; background: rgba(245,158,11,.12); }
+  .wb-tag.wb-crowd { color: #fca5a5; background: rgba(239,68,68,.12); }
   .wb-tag.wb-weak { color: #9ca3af; background: #1a1a1a; }
   .wb-ok { color: #6ee7b7; } .wb-warn { color: #fca5a5; }
   .wb-do { margin-top: 4px; padding-top: 8px; border-top: 1px solid #1f1f1f; color: #c4b5fd; }
@@ -2026,11 +2027,13 @@ function computeNarrativeWoW(rows) {
 // Single source of truth: can this narrative be the WEEK'S MAIN PICK?
 // Decided in code (not in the prompt) so the verdict never depends on the model obeying.
 // A theme is main-eligible only if a small/mid creator can safely enter it:
-//   breadth (≥3 distinct outlier channels) + confidence not low + small caps do at
-//   least as well as big ones (creatorLift ≥ bigLift). Anything else → watch/avoid only.
+//   NOT saturated + breadth (≥3 distinct outlier channels) + confidence not low +
+//   small caps do at least as well as big ones (creatorLift ≥ bigLift). Anything else → watch/avoid.
+// Saturated is excluded on purpose: high confidence on a "Забито" theme means "we're sure it's
+// crowded", NOT "good opportunity" — so it belongs in «Осторожно / забито», never «Главный».
 function weeklyMainEligible(g) {
   const c = g.cur;
-  return c.ch >= 3 && g.conf.key !== "low" && c.creatorLift >= c.bigLift;
+  return g.sat.key !== "sat" && c.ch >= 3 && g.conf.key !== "low" && c.creatorLift >= c.bigLift;
 }
 
 function renderWoWPanel(wow) {
@@ -2321,10 +2324,16 @@ async function loadWeeklyReport() {
     .map(g => ({ g, s: (satW[g.sat.key] ?? 0) + (confW[g.conf.key] ?? 0)
       + (g.cur.cN > 0 && g.cur.creatorLift >= g.cur.bigLift ? 1 : 0) + Math.min(g.cur.n, 5) * 0.2 }))
     .sort((a, b) => b.s - a.s);
-  const primary   = scored[0]?.g || null;
-  const crowded   = narrs.filter(g => g.sat.key === "sat" && g.cur.n > 0 && g !== primary).sort((a, b) => b.cur.n - a.cur.n)[0];
-  const secondary = crowded || scored[1]?.g || null;
-  const weak      = narrs.filter(g => (g.conf.key === "low" || g.cur.topShare > 0.5) && g.cur.n > 0 && g !== primary && g !== secondary)
+  // Главный/Вторичный = GENUINE opportunities only — must pass weeklyMainEligible (which excludes
+  // saturated). Same gate as the Sonnet разбор, so card label and Brief never contradict.
+  const eligible  = scored.filter(({ g }) => weeklyMainEligible(g)).map(({ g }) => g);
+  const primary   = eligible[0] || null;
+  const secondary = eligible[1] || null;
+  // Осторожно / забито — saturated theme with real volume; high confidence here = "sure it's crowded".
+  const crowded   = narrs.filter(g => g.sat.key === "sat" && g.cur.n > 0)
+    .sort((a, b) => b.cur.n - a.cur.n)[0] || null;
+  const weak      = narrs.filter(g => (g.conf.key === "low" || g.cur.topShare > 0.5) && g.cur.n > 0
+                      && g !== primary && g !== secondary && g !== crowded)
     .sort((a, b) => b.cur.n - a.cur.n)[0] || null;
 
   const bLine = g => g
@@ -2336,10 +2345,15 @@ async function loadWeeklyReport() {
         <button class="copy-btn analyst-trigger" id="weeklyAIBtn" style="margin-left:auto">🧠 Sonnet-разбор</button>
       </div>
       <div class="wb-body">
-        <div class="wb-row"><span class="wb-tag wb-main">Главный</span> ${bLine(primary)}${primary && primary.cur.cN > 0 && primary.cur.creatorLift >= primary.cur.bigLift ? ` · <span class="wb-ok">small ≥ large ✓</span>` : ""}</div>
-        <div class="wb-row"><span class="wb-tag wb-sec">Вторичный</span> ${bLine(secondary)}${secondary && secondary.sat.key === "sat" ? ` · <span class="wb-warn">шумно/забито</span>` : ""}</div>
+        <div class="wb-row"><span class="wb-tag wb-main">Главный</span> ${primary
+          ? bLine(primary) + (primary.cur.cN > 0 && primary.cur.creatorLift >= primary.cur.bigLift ? ` · <span class="wb-ok">small ≥ large ✓</span>` : "")
+          : `<span class="wb-warn">Чистого фаворита на неделе нет — ни одна тема не прошла проверку</span>`}</div>
+        ${secondary ? `<div class="wb-row"><span class="wb-tag wb-sec">Вторичный</span> ${bLine(secondary)}</div>` : ""}
+        ${crowded ? `<div class="wb-row"><span class="wb-tag wb-crowd">Осторожно / забито</span> ${bLine(crowded)} · <span class="wb-warn">тема перегрета — высокая конкуренция, не возможность</span></div>` : ""}
         ${weak ? `<div class="wb-row"><span class="wb-tag wb-weak">Слабый</span> ${bLine(weak)} · <span class="wb-warn">держится на одном канале</span></div>` : ""}
-        <div class="wb-do">▸ Что делать: собирать <b>${primary ? escapeHtml(labelRuOf(primary.label)) : "—"}</b> evidence + формулы заголовков.</div>
+        <div class="wb-do">▸ Что делать: ${primary
+          ? `собирать <b>${escapeHtml(labelRuOf(primary.label))}</b> evidence + формулы заголовков.`
+          : `чёткого фаворита нет — добирать самую устойчивую из доступных и ждать, пока тему подхватят новые каналы.`}</div>
       </div>
       <div id="weeklyAI"></div>
     </div>`;
