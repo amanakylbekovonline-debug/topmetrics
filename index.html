@@ -2339,6 +2339,16 @@ async function loadWeeklyReport() {
   const bLine = g => g
     ? `<b>${escapeHtml(labelRuOf(g.label))}</b> — ${SAT_RU[g.sat.key] || g.sat.txt}, ${g.cur.n}/${g.cur.total} (lift ${g.cur.avgO.toFixed(1)}x · ${g.cur.ch} кан. · доверие ${CONF_RU[g.conf.key] || g.conf.txt})`
     : "—";
+  // accurate "why weak" — a theme is weak from low confidence (small sample n<5) and/or a
+  // top channel carrying >50% of outliers, not necessarily from being one channel.
+  const chWord = n => { const d = n % 10, h = n % 100; return (h >= 11 && h <= 14) ? "каналов" : d === 1 ? "канал" : (d >= 2 && d <= 4) ? "канала" : "каналов"; };
+  const weakWhy = g => {
+    if (g.cur.ch <= 1) return "держится на одном канале";
+    const why = [];
+    if (g.cur.n < 5) why.push("выборка маленькая");
+    if (g.cur.topShare > 0.35) why.push(`топ-канал даёт ${Math.round(g.cur.topShare * 100)}% outlier'ов`);
+    return `есть ${g.cur.ch} ${chWord(g.cur.ch)}, но ${why.length ? why.join(", а " ) : "сигнал слабый"}`;
+  };
   const briefHTML = `
     <div class="wb-panel">
       <div class="wb-head">📝 Weekly Brief
@@ -2350,7 +2360,7 @@ async function loadWeeklyReport() {
           : `<span class="wb-warn">Чистого фаворита на неделе нет — ни одна тема не прошла проверку</span>`}</div>
         ${secondary ? `<div class="wb-row"><span class="wb-tag wb-sec">Вторичный</span> ${bLine(secondary)}</div>` : ""}
         ${crowded ? `<div class="wb-row"><span class="wb-tag wb-crowd">Осторожно / забито</span> ${bLine(crowded)} · <span class="wb-warn">тема перегрета — высокая конкуренция, не возможность</span></div>` : ""}
-        ${weak ? `<div class="wb-row"><span class="wb-tag wb-weak">Слабый</span> ${bLine(weak)} · <span class="wb-warn">держится на одном канале</span></div>` : ""}
+        ${weak ? `<div class="wb-row"><span class="wb-tag wb-weak">Слабый</span> ${bLine(weak)} · <span class="wb-warn">${weakWhy(weak)}</span></div>` : ""}
         <div class="wb-do">▸ Что делать: ${primary
           ? `собирать <b>${escapeHtml(labelRuOf(primary.label))}</b> evidence + формулы заголовков.`
           : `чёткого фаворита нет — добирать самую устойчивую из доступных и ждать, пока тему подхватят новые каналы.`}</div>
