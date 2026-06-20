@@ -582,72 +582,19 @@
   .wow-delta.down { color: #f97316; }
   @media (max-width: 760px) { .wow-c-metrics { padding-left: 0; } }
 
-  /* Daily analysis checklist */
-  .daily-checklist {
-    background: #111; border: 1px solid #1f1f1f;
-    border-radius: 12px; padding: 14px 18px;
-    margin-bottom: 18px;
-    transition: border-color .2s;
+  /* Per-tab "questions to answer" banner */
+  .page-q {
+    background: rgba(139,92,246,.06);
+    border: 1px solid rgba(139,92,246,.18);
+    border-left: 3px solid #8b5cf6;
+    border-radius: 10px; padding: 9px 14px 10px; margin-bottom: 16px;
   }
-  .daily-checklist.complete { border-color: rgba(34,197,94,.35); }
-  .dc-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer; }
-  .dc-chevron { color: #666; font-size: 11px; transition: transform .15s; display: inline-block; }
-  .daily-checklist:not(.collapsed) .dc-chevron { transform: rotate(90deg); }
-  .daily-checklist.collapsed .dc-head { margin-bottom: 0; }
-  .daily-checklist.collapsed .dc-list { display: none; }
-  .dc-title {
-    font-size: 11px; font-weight: 600; color: #555;
-    text-transform: uppercase; letter-spacing: .7px;
+  .page-q-h {
+    font-size: 11px; font-weight: 700; color: #a78bfa;
+    text-transform: uppercase; letter-spacing: .5px; margin-bottom: 5px;
   }
-  .dc-progress {
-    background: #1a1a1a; border: 1px solid #2a2a2a;
-    color: #888; font-size: 11px; font-weight: 600;
-    padding: 2px 9px; border-radius: 999px;
-  }
-  .daily-checklist.complete .dc-progress {
-    background: rgba(34,197,94,.12); border-color: rgba(34,197,94,.3); color: #6ee7b7;
-  }
-  .dc-spacer { flex: 1; }
-  .dc-btn {
-    background: none; border: 1px solid #2a2a2a; color: #666;
-    padding: 3px 10px; border-radius: 6px; font-size: 11px;
-    cursor: pointer; transition: all .15s;
-  }
-  .dc-btn:hover { border-color: #555; color: #ccc; }
-  .dc-list { display: flex; flex-direction: column; gap: 2px; }
-  .dc-step {
-    display: flex; gap: 11px; align-items: flex-start;
-    padding: 8px 10px; border-radius: 8px;
-    cursor: pointer; transition: background .12s;
-    user-select: none;
-  }
-  .dc-step:hover { background: #161616; }
-  .dc-check {
-    width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px;
-    border: 1.5px solid #444; border-radius: 5px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 12px; color: transparent;
-    transition: all .15s;
-  }
-  .dc-step:hover .dc-check { border-color: #666; }
-  .dc-step.done .dc-check {
-    background: #22c55e; border-color: #22c55e; color: #03200d;
-  }
-  .dc-body { flex: 1; min-width: 0; }
-  .dc-text {
-    font-size: 13px; color: #d4d4d4; font-weight: 500;
-    line-height: 1.35;
-    transition: color .15s;
-  }
-  .dc-step.done .dc-text {
-    color: #555; text-decoration: line-through;
-    text-decoration-color: #333;
-  }
-  .dc-hint {
-    font-size: 11px; color: #555; line-height: 1.45;
-    margin-top: 2px;
-  }
-  .dc-step.done .dc-hint { color: #333; }
+  .page-q ul { margin: 0; padding-left: 18px; }
+  .page-q li { font-size: 13px; color: #cbd5e1; line-height: 1.5; margin: 1px 0; }
 
   /* Daily Radar page */
   .radar-section-title {
@@ -1007,6 +954,8 @@
     </div>
   </div>
 
+  <div id="pageQuestions"></div>
+
   <section class="page" id="page-report">
     <div id="reportContent"><div class="loading">Готовим данные отчёта...</div></div>
   </section>
@@ -1105,6 +1054,71 @@ const PAGES = {
   recos:    { title: "Рекомендации", showFilters: false },
   channels: { title: "Каналы",    showFilters: false }
 };
+
+// What questions each tab exists to answer — keeps the operator focused on the decision,
+// not the data. Shown as a small banner above every page (replaces the old radar checklist).
+const PAGE_QUESTIONS = {
+  radar: [
+    "Что движется прямо сейчас и заслуживает внимания?",
+    "Где у малого канала (&lt;300K) есть окно зайти?",
+    "Какой заголовок или формат отсюда можно скопировать?",
+  ],
+  report: [
+    "Какая тема недели — реальная возможность, а какие перегреты?",
+    "Какой нарратив подтверждён несколькими каналами (а не одним автором)?",
+    "Что собрать в отчёт клиенту на этой неделе?",
+  ],
+  outliers: [
+    "Какие видео выстрелили сильнее обычного для своего канала?",
+    "Это разовый всплеск или часть растущей темы?",
+    "Что здесь не артефакт маленькой базы канала?",
+  ],
+  recent: [
+    "Что вышло только что и может разогнаться?",
+    "Есть ли ранний сигнал, пока тема ещё не забита?",
+  ],
+  saved: [
+    "Хватает ли доказательств, чтобы это попало в отчёт?",
+    "Какая роль у каждого сохранения (пример / формат / наблюдение / осторожно)?",
+    "Что уже готово превратить в рекомендацию?",
+  ],
+  archive: [
+    "Что мы уже рекомендовали и когда?",
+    "Какие прошлые отчёты можно переиспользовать?",
+  ],
+  insights: [
+    "Какой главный вывод недели по данным?",
+    "Что подтверждено несколькими каналами, а что — просто шум?",
+  ],
+  topics: [
+    "Какие темы складываются в устойчивые кластеры?",
+    "Где внутри кластера приподнятый набор (это относительный взгляд, не общий компас)?",
+  ],
+  velocity: [
+    "Что ускоряется прямо сейчас (быстрый прирост просмотров)?",
+    "Какой ранний разгон стоит поймать до пика?",
+  ],
+  eqs: [
+    "У каких видео внимание настоящее и устойчивое, а не ради обложки?",
+    "Что переживёт всплеск и повторится?",
+  ],
+  recos: [
+    "Какая конкретная рекомендация рождается из этого?",
+    "Какую идею можно дать креатору?",
+    "Как потом понять, сработала она или нет?",
+  ],
+  channels: [
+    "Какие каналы в ростере и насколько они релевантны нише?",
+    "Кого стоит добавить или убрать?",
+  ],
+};
+
+function questionsHTML(pageId) {
+  const qs = PAGE_QUESTIONS[pageId];
+  if (!qs || !qs.length) return "";
+  // entries are trusted static strings (may contain intentional &lt; entities) — not user input
+  return `<div class="page-q"><div class="page-q-h">❓ На какие вопросы отвечаем на этой вкладке</div><ul>${qs.map(q => `<li>${q}</li>`).join("")}</ul></div>`;
+}
 
 /* ---------- helpers ---------- */
 function fmt(n) {
@@ -1263,7 +1277,7 @@ function cardHTML(v, opts = {}) {
       <div class="size-tag ${tag}">${fmt(subs)} подп.</div>
       ${opts.quickRole === undefined ? `<button class="save-btn ${inLib?'saved':''}" data-id="${escapeHtml(v.video_id)}" title="${inLib?'Убрать из библиотеки':'В библиотеку'}">${bookmarkSvg()}</button>` : ""}
       <div class="score-badge ${sigClass(score)}">${score.toFixed(1)}x</div>
-      ${opts.velocity != null ? `<div class="vel-badge" title="прирост просмотров за окно">+${fmt(opts.velocity)}</div>` : ""}
+      ${opts.velocity != null ? `<div class="vel-badge" title="Сколько просмотров видео набрало за выбранное окно времени — показывает разгон именно сейчас.">+${fmt(opts.velocity)}</div>` : ""}
       ${opts.xviews != null ? `<div class="xviews-badge ${xvClass(opts.xviews)}" title="${escapeHtml(opts.xvTip || "")}">xV ${opts.xviews.toFixed(1)}×</div>` : ""}
     </div>
     <div class="body">
@@ -1272,11 +1286,11 @@ function cardHTML(v, opts = {}) {
       ${opts.layers?.length ? `<div class="layer-badges">${opts.layers.map(l => `<span class="layer-badge ${l.cls}">${l.emoji} ${l.label}</span>`).join("")}</div>` : ""}
       ${ntag ? `<div class="narrative-tag">${escapeHtml(ntag)}</div>` : ""}
       <div class="metrics">
-        <div class="m-secondary">VPH<span>${fmt(v.vph||0)}/ч</span></div>
-        <div class="m-secondary">Просмотры<span>${fmt(v.view_count||0)}</span></div>
-        <div class="m-primary">Аутлайер<span>${score.toFixed(1)}x</span></div>
-        <div class="m-dim" title="Engagement Quality Score — устойчивость внимания. Низкий = всплеск ради превью, не повторится. Высокий = реальный, долгий интерес.">EQS<span>${(v.eqs||0).toFixed(2)}</span></div>
-        <div class="m-eng" title="Вовлечённость, которую НЕ ловит EQS — 💬 комментарии на 1000 просмотров (прокси обсуждения / спорности) · 👍 лайки как % от просмотров">Вовлечённость<span>💬 ${cp1k.toFixed(1)}/1к · 👍 ${likePct.toFixed(1)}%</span></div>
+        <div class="m-secondary" title="Просмотры в час — как быстро видео набирает прямо сейчас. Высокий VPH = тема горячая именно сейчас, а не набрала когда-то давно.">VPH<span>${fmt(v.vph||0)}/ч</span></div>
+        <div class="m-secondary" title="Сколько всего просмотров набрало видео за всё время.">Просмотры<span>${fmt(v.view_count||0)}</span></div>
+        <div class="m-primary" title="Во сколько раз видео обогнало обычный уровень своего канала. 2x = вдвое выше нормы канала. Так видно, выстрелило ли видео, даже у маленького канала.">Аутлайер<span>${score.toFixed(1)}x</span></div>
+        <div class="m-dim" title="Насколько внимание к видео настоящее. Низкий — зацепила обложка, но смотреть быстро бросают (всплеск не повторится). Высокий — смотрят по-настоящему, такой интерес возвращается.">EQS<span>${(v.eqs||0).toFixed(2)}</span></div>
+        <div class="m-eng" title="Насколько живо реагируют зрители (EQS это не показывает). 💬 — комментариев на 1000 просмотров: чем больше, тем сильнее тема цепляет и вызывает споры. 👍 — лайков в % от просмотров.">Вовлечённость<span>💬 ${cp1k.toFixed(1)}/1к · 👍 ${likePct.toFixed(1)}%</span></div>
       </div>
       ${opts.quickRole !== undefined ? quickRoleHTML(v.video_id, opts.quickRole) : ""}
       ${opts.libMeta || ""}
@@ -1918,7 +1932,7 @@ function openCluster(idx) {
     <div class="grid">${vids.map(v => cardHTML(v, {
       xviews: v._xv,
       xvTip: v._xv != null
-        ? `${v._xv.toFixed(2)}× the topic's typical lift (channel-size-neutral) · ${fmt(v.view_count || 0)} views vs topic median ${st.medViews != null ? fmt(Math.round(st.medViews)) : "—"}`
+        ? `Во сколько раз видео популярнее обычного по этой теме (без привязки к размеру канала). ${v._xv.toFixed(2)}× — ${fmt(v.view_count || 0)} просмотров против ${st.medViews != null ? fmt(Math.round(st.medViews)) : "—"} типичных для темы.`
         : ""
     })).join("")}</div>`;
 
@@ -2595,92 +2609,6 @@ STRICT RULES:
 — Write for a finance creator deciding what to film next week, not for an investor`;
 }
 
-/* ---------- Daily analysis checklist ---------- */
-const RADAR_CHECKLIST = [
-  { title: "Начинай с «Ускоряющихся», а не с аутлайеров за всё время",
-    hint:  "Velocity важнее пожизненного скора для того, что горит прямо сейчас." },
-  { title: "Убирай шум абсолютным масштабом",
-    hint:  "Высокий аутлайер при крошечных просмотрах — артефакт baseline; игнорируй множитель." },
-  { title: "Группируй по нарративу, считай разные каналы",
-    hint:  "Для нарратива в отчёт нужно ≥3 независимых канала — ставка одного автора не волна." },
-  { title: "Ищи прорывы малых каналов внутри живых тем",
-    hint:  "Темы, где пробиваются каналы <100K = окна возможностей для твоих клиентов." },
-  { title: "Вытащи паттерн заголовка или формата",
-    hint:  "Какой повторяемый хук креатор может скопировать? Паттерн > пример." },
-  { title: "Перепроверь по EQS",
-    hint:  "Низкий EQS = внимание ради превью, не повторится. Высокий EQS = устойчивый интерес." },
-  { title: "Сохрани в библиотеку со статусом и заметкой-доказательством",
-    hint:  "Сегодняшние сохранения станут отчётом следующей недели. Пометь, запиши почему." },
-];
-
-function dcKey() {
-  return `tm_radar_checklist_${new Date().toLocaleDateString("en-CA")}`;
-}
-function dcLoad()  { try { return JSON.parse(localStorage.getItem(dcKey()) || "[]"); } catch { return []; } }
-function dcSave(s) { localStorage.setItem(dcKey(), JSON.stringify(s)); }
-
-function renderChecklistHTML() {
-  const state = dcLoad();
-  const total = RADAR_CHECKLIST.length;
-  const done  = state.filter(Boolean).length;
-  const steps = RADAR_CHECKLIST.map((s, i) => `
-    <div class="dc-step ${state[i] ? "done" : ""}" data-step="${i}">
-      <div class="dc-check">✓</div>
-      <div class="dc-body">
-        <div class="dc-text">${i+1}. ${s.title}</div>
-        <div class="dc-hint">${s.hint}</div>
-      </div>
-    </div>`).join("");
-  const collapsed = dcCollapsed();
-  return `
-    <div class="daily-checklist ${done === total ? "complete" : ""} ${collapsed ? "collapsed" : ""}" id="dailyChecklist">
-      <div class="dc-head" id="dcHead">
-        <span class="dc-chevron">▸</span>
-        <div class="dc-title">🧭 Дневной проход анализа</div>
-        <div class="dc-progress" id="dcProgress">${done}/${total}</div>
-        <div class="dc-spacer"></div>
-        <button class="dc-btn" id="dcReset">Сброс</button>
-      </div>
-      <div class="dc-list" id="dcList">${steps}</div>
-    </div>`;
-}
-
-// Collapsed by default — the methodology stays one click away without burying the radar data.
-function dcCollapsed() { return localStorage.getItem("tm_checklist_collapsed") !== "0"; }
-
-function wireChecklist() {
-  const list = $("dcList");
-  if (!list) return;
-  const total = RADAR_CHECKLIST.length;
-
-  // expand/collapse — clicking the header (but not Reset) toggles, persisted across days
-  $("dcHead").addEventListener("click", e => {
-    if (e.target.closest("#dcReset")) return;
-    const willCollapse = !$("dailyChecklist").classList.contains("collapsed");
-    $("dailyChecklist").classList.toggle("collapsed", willCollapse);
-    localStorage.setItem("tm_checklist_collapsed", willCollapse ? "1" : "0");
-  });
-
-  list.addEventListener("click", e => {
-    const stepEl = e.target.closest(".dc-step");
-    if (!stepEl) return;
-    const idx = +stepEl.dataset.step;
-    const state = dcLoad();
-    state[idx] = !state[idx];
-    dcSave(state);
-    stepEl.classList.toggle("done", !!state[idx]);
-    const done = state.filter(Boolean).length;
-    $("dcProgress").textContent = `${done}/${total}`;
-    $("dailyChecklist").classList.toggle("complete", done === total);
-  });
-  $("dcReset").addEventListener("click", () => {
-    dcSave([]);
-    document.querySelectorAll(".dc-step").forEach(el => el.classList.remove("done"));
-    $("dcProgress").textContent = `0/${total}`;
-    $("dailyChecklist").classList.remove("complete");
-  });
-}
-
 async function loadRadar() {
   const content = $("radarContent");
   content.innerHTML = '<div class="loading">Строим радар...</div>';
@@ -2808,7 +2736,6 @@ async function loadRadar() {
   </div>`;
 
   content.innerHTML = `
-    ${renderChecklistHTML()}
     <div class="radar-head">
       <div class="stats">📡 Дневной радар · ${today}</div>
       <div class="vel-window">
@@ -2824,8 +2751,6 @@ async function loadRadar() {
 
     ${radarNav}
     ${sectionsHTML}`;
-
-  wireChecklist();
 
   // section collapse / expand
   content.querySelectorAll(".radar-sec-head").forEach(h =>
@@ -3669,7 +3594,7 @@ async function openPanel(v) {
         <div class="pm-label">VPH</div>
         <div class="pm-value">${fmt(v.vph || 0)}/ч</div>
       </div>
-      <div class="panel-metric" title="Engagement Quality Score — устойчивость внимания. Низкий = всплеск ради превью, не повторится. Высокий = реальный, долгий интерес.">
+      <div class="panel-metric" title="Насколько внимание к видео настоящее. Низкий — зацепила обложка, но смотреть быстро бросают (всплеск не повторится). Высокий — смотрят по-настоящему, такой интерес возвращается.">
         <div class="pm-label">EQS</div>
         <div class="pm-value">${(v.eqs || 0).toFixed(2)}</div>
       </div>
@@ -3818,6 +3743,7 @@ function switchPage(pageId) {
   navItems.forEach(n => n.classList.toggle("active", n.dataset.page === pageId));
   pageTitle.textContent = cfg.title;
   filtersEl.style.display = cfg.showFilters ? "" : "none";
+  $("pageQuestions").innerHTML = questionsHTML(pageId);
 
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
 
@@ -3923,6 +3849,7 @@ document.addEventListener("click", async e => {
 $("hamburger").addEventListener("click", () => sidebar.classList.toggle("open"));
 
 // Initial load — wait for reportMap so bookmark states render correctly on first paint
+$("pageQuestions").innerHTML = questionsHTML(currentPage);
 loadReportMap().then(loadVideos);
 </script>
 </body>
