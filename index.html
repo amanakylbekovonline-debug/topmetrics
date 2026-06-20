@@ -2023,6 +2023,16 @@ function computeNarrativeWoW(rows) {
   };
 }
 
+// Single source of truth: can this narrative be the WEEK'S MAIN PICK?
+// Decided in code (not in the prompt) so the verdict never depends on the model obeying.
+// A theme is main-eligible only if a small/mid creator can safely enter it:
+//   breadth (≥3 distinct outlier channels) + confidence not low + small caps do at
+//   least as well as big ones (creatorLift ≥ bigLift). Anything else → watch/avoid only.
+function weeklyMainEligible(g) {
+  const c = g.cur;
+  return c.ch >= 3 && g.conf.key !== "low" && c.creatorLift >= c.bigLift;
+}
+
 function renderWoWPanel(wow) {
   if (!wow.all.length) return "";
   const arrow = g => g.dN > 0 ? "📈" : (g.dN < 0 && g.prev.n > 0) ? "📉" : "▪️";
@@ -2411,6 +2421,7 @@ async function loadWeeklyReport() {
       n: g.cur.n, total: g.cur.total, ch: g.cur.ch,
       lift: +g.cur.avgO.toFixed(1), medLift: +g.cur.medO.toFixed(1), topShare: +(g.cur.topShare).toFixed(2),
       smallLift: +g.cur.creatorLift.toFixed(1), bigLift: +g.cur.bigLift.toFixed(1), dN: g.dN,
+      eligible: weeklyMainEligible(g),
     })),
   });
   let weeklyAIDone = false;
