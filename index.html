@@ -824,25 +824,6 @@
   .vel-waiting h3 { font-size: 18px; color: #e5e5e5; margin-bottom: 8px; font-weight: 600; }
   .vel-waiting p  { font-size: 13px; line-height: 1.6; max-width: 400px; margin: 0 auto; }
 
-  /* AI Insights page */
-  #page-insights { max-width: 780px; }
-  .insights-panel { }
-  .insights-header {
-    font-size: 12px; font-weight: 600; color: #555;
-    text-transform: uppercase; letter-spacing: 0.6px;
-    margin-bottom: 14px; display: flex; align-items: center; gap: 6px;
-  }
-  .insight-cards { display: flex; flex-direction: column; gap: 10px; }
-  .insight-card {
-    background: linear-gradient(135deg, rgba(139,92,246,.07), rgba(139,92,246,.02));
-    border: 1px solid rgba(139,92,246,.18);
-    border-radius: 12px; padding: 14px 18px;
-    display: flex; gap: 14px; align-items: flex-start;
-  }
-  .insight-emoji { font-size: 20px; flex-shrink: 0; line-height: 1.4; }
-  .insight-text h5 { font-size: 14px; font-weight: 600; color: #e5e5e5; margin: 0 0 4px; }
-  .insight-text p  { font-size: 13px; color: #888; line-height: 1.6; margin: 0; }
-
   /* Topic xViews (topic-relative performance) */
   .topic-stat { font-size: 12px; color: #8b5cf6; font-weight: 500; margin-bottom: 10px; }
   .topic-sub { display: block; font-size: 11px; color: #666; font-weight: 400; margin-top: 4px; max-width: 680px; line-height: 1.4; }
@@ -959,7 +940,6 @@
     <div class="nav-item" data-page="recent"><span class="nav-icon">📅</span> Свежие</div>
     <div class="nav-item" data-page="saved"><span class="nav-icon">📚</span> Библиотека отчётов</div>
     <div class="nav-item" data-page="archive"><span class="nav-icon">🗂️</span> Архив отчётов</div>
-    <div class="nav-item" data-page="insights"><span class="nav-icon">🤖</span> AI-инсайты</div>
   </div>
 
   <div class="nav-section">
@@ -1049,10 +1029,6 @@
     <div class="grid" id="grid"></div>
   </section>
 
-  <section class="page" id="page-insights">
-    <div id="insightsPanel"></div>
-  </section>
-
   <section class="page" id="page-saved">
     <div class="lib-tabs" id="libTabs"></div>
     <div class="stats" id="savedStats"></div>
@@ -1126,7 +1102,6 @@ const PAGES = {
   recent:   { title: "Свежие",      showFilters: true,  defaultSort: "published_at" },
   saved:    { title: "Библиотека отчётов", showFilters: false },
   archive:  { title: "Архив отчётов", showFilters: false },
-  insights: { title: "AI-инсайты", showFilters: false },
   topics:   { title: "Темы",      showFilters: false },
   velocity: { title: "Динамика",    showFilters: false },
   eqs:      { title: "Лидеры EQS", showFilters: true, defaultSort: "eqs", defaultMinViews: 10000 },
@@ -1164,10 +1139,6 @@ const PAGE_QUESTIONS = {
   archive: [
     "Что мы уже рекомендовали и когда?",
     "Какие прошлые отчёты можно переиспользовать?",
-  ],
-  insights: [
-    "Какой главный вывод недели по данным?",
-    "Что подтверждено несколькими каналами, а что — просто шум?",
   ],
   topics: [
     "Какие темы складываются в устойчивые кластеры?",
@@ -3244,37 +3215,6 @@ async function loadVelocity() {
 }
 
 /* ---------- AI Insights (аномалии недели) ---------- */
-async function loadInsights() {
-  const panel = $("insightsPanel");
-  if (!panel) return;
-  try {
-    const { data } = await supabase
-      .from("weekly_insights")
-      .select("week_start, insights")
-      .order("week_start", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (!data?.insights?.length) return;
-    const weekLabel = new Date(data.week_start + "T00:00:00Z")
-      .toLocaleDateString(undefined, { month: "short", day: "numeric", timeZone: "UTC" });
-    const cards = data.insights.map(ins => `
-      <div class="insight-card">
-        <span class="insight-emoji">${ins.emoji || "💡"}</span>
-        <div class="insight-text">
-          <h5>${escapeHtml(ins.headline || "")}</h5>
-          <p>${escapeHtml(ins.detail || "")}</p>
-        </div>
-      </div>`).join("");
-    panel.innerHTML = `
-      <div class="insights-panel">
-        <div class="insights-header">🤖 AI-инсайты · неделя ${weekLabel}</div>
-        <div class="insight-cards">${cards}</div>
-      </div>`;
-  } catch {
-    // нет данных — молча пропускаем
-  }
-}
-
 /* ---------- Report Archive ---------- */
 // Manual paste-back: generate report in external LLM → paste markdown here → it lives in the system.
 let archiveCompiled = [];   // cached report rows
@@ -3995,9 +3935,6 @@ function switchPage(pageId) {
   } else if (pageId === "archive") {
     $("page-archive").classList.add("active");
     loadReports();
-  } else if (pageId === "insights") {
-    $("page-insights").classList.add("active");
-    loadInsights();
   } else if (pageId === "topics") {
     $("page-topics").classList.add("active");
     loadTopics();
