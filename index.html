@@ -695,6 +695,7 @@
   .sq-info { display: flex; gap: 10px; padding: 8px 10px; font-size: 12px; color: #aaa; line-height: 1.45; }
   .sq-info .sq-info-k { color: #777; flex-shrink: 0; }
   .sq-based { font-size: 11px; color: #777; margin-top: 3px; }
+  .sq-onechan { font-size: 11px; padding: 1px 7px; border-radius: 5px; background: rgba(239,68,68,.12); color: #fca5a5; }
 
   /* Daily Radar page */
   .radar-section-title {
@@ -1517,7 +1518,11 @@ function openCurateQueue(result) {
   const ready = (result.ready || []).map(it => {
     const based = (Array.isArray(it.based_on) ? it.based_on : []).filter(id => libRowMap.has(id));
     const src = libRowMap.has(it.source_video_id) ? it.source_video_id : based[0];
-    return { ...it, based, src };
+    // distinct channels behind the bet — a single-channel "ready" is really one author's bet,
+    // not a confirmed signal; we flag it and leave it unchecked (a format bet can still be opted in).
+    const ids = [...new Set([src, ...based].filter(Boolean))];
+    const channels = new Set(ids.map(id => libRowMap.get(id)?.videos?.channels?.title).filter(Boolean));
+    return { ...it, based, src, singleChannel: channels.size < 2 };
   }).filter(it => it.src && libRowMap.get(it.src)?.role !== "caution");
   const need = result.need || [];
   const dont = result.dont || [];
@@ -1526,9 +1531,9 @@ function openCurateQueue(result) {
 
   const readyRows = ready.map((it, i) => `
     <label class="sq-row">
-      <input type="checkbox" class="sq-check" data-idx="${i}" checked/>
+      <input type="checkbox" class="sq-check" data-idx="${i}" ${it.singleChannel ? "" : "checked"}/>
       <div class="sq-row-main">
-        <div class="sq-row-top"><b>${escapeHtml(it.idea || "(без названия)")}</b> <span class="sq-conf conf-${normConf(it.confidence)}">${SQ_CONF_RU[normConf(it.confidence)]}</span></div>
+        <div class="sq-row-top"><b>${escapeHtml(it.idea || "(без названия)")}</b> <span class="sq-conf conf-${normConf(it.confidence)}">${SQ_CONF_RU[normConf(it.confidence)]}</span>${it.singleChannel ? ` <span class="sq-onechan">только один канал</span>` : ""}</div>
         ${it.draft_title ? `<div class="sq-draft">Заголовок: <b>${escapeHtml(it.draft_title)}</b></div>` : ""}
         ${it.risk ? `<div class="sq-row-why">Риск: ${escapeHtml(it.risk)}</div>` : ""}
         <div class="sq-based">На основе: ${escapeHtml(it.based.map(labelOf).join(" · ") || labelOf(it.src))}</div>
@@ -1552,7 +1557,7 @@ function openCurateQueue(result) {
         <div class="sq-title">Sonnet отобрал из библиотеки</div>
         <button class="sq-close" id="sqClose">×</button>
       </div>
-      <div class="sq-sub">Отмеченное уйдёт в Рекомендации как открытые ставки. Остальные группы — подсказки.</div>
+      <div class="sq-sub">Отмеченное уйдёт в Рекомендации как открытые ставки. Карточки «только один канал» сняты по умолчанию (подтверждение одним автором) — отметь сам, если это осознанная format-ставка.</div>
       <div class="sq-list">
         ${ready.length ? `<div class="sq-group-title g-ready">Готово в рекомендации (${ready.length})</div>${readyRows}` : ""}
         ${need.length ? `<div class="sq-group-title g-need">Добрать evidence (${need.length})</div>${needRows}` : ""}
