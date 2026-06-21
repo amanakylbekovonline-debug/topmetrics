@@ -46,6 +46,12 @@
     border-left-color: #8b5cf6;
   }
   .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+  /* Raw / Debug collapsible section */
+  .nav-debug-toggle { cursor: pointer; display: flex; align-items: center; gap: 6px; user-select: none; }
+  .nav-debug-toggle:hover { color: #888; }
+  .nav-debug-chevron { font-size: 9px; transition: transform .15s; display: inline-block; }
+  .nav-debug:not(.collapsed) .nav-debug-chevron { transform: rotate(90deg); }
+  .nav-debug.collapsed .nav-debug-items { display: none; }
 
   /* Main */
   .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
@@ -934,26 +940,30 @@
   <div class="logo">TubeMetrics <span>Finance</span></div>
 
   <div class="nav-section">
-    <div class="nav-section-title">Обзор</div>
-    <div class="nav-item" data-page="radar"><span class="nav-icon">📡</span> Дневной радар</div>
-    <div class="nav-item active" data-page="outliers"><span class="nav-icon">🔥</span> Аутлайеры</div>
-    <div class="nav-item" data-page="recent"><span class="nav-icon">📅</span> Свежие</div>
-    <div class="nav-item" data-page="saved"><span class="nav-icon">📚</span> Библиотека отчётов</div>
-    <div class="nav-item" data-page="archive"><span class="nav-icon">🗂️</span> Архив отчётов</div>
-  </div>
-
-  <div class="nav-section">
-    <div class="nav-section-title">Анализ</div>
-    <div class="nav-item" data-page="report"><span class="nav-icon">📝</span> Недельный отчёт</div>
-    <div class="nav-item" data-page="topics"><span class="nav-icon">📊</span> Темы</div>
-    <div class="nav-item" data-page="velocity"><span class="nav-icon">📈</span> Динамика</div>
-    <div class="nav-item" data-page="eqs"><span class="nav-icon">🎯</span> Лидеры EQS</div>
-    <div class="nav-item" data-page="recos"><span class="nav-icon">🧭</span> Рекомендации</div>
+    <div class="nav-section-title">Работа</div>
+    <div class="nav-item active" data-page="radar" title="Что двигается сегодня"><span class="nav-icon">📡</span> Дневной радар</div>
+    <div class="nav-item" data-page="saved" title="Сохранённые evidence и форматы"><span class="nav-icon">📚</span> Библиотека</div>
+    <div class="nav-item" data-page="report" title="Что можно рекомендовать на неделе"><span class="nav-icon">📝</span> Недельный отчёт</div>
+    <div class="nav-item" data-page="recos" title="Идеи, которые будем проверять"><span class="nav-icon">🧭</span> Рекомендации</div>
+    <div class="nav-item" data-page="archive" title="Сохранённые отчёты"><span class="nav-icon">🗂️</span> Архив</div>
   </div>
 
   <div class="nav-section">
     <div class="nav-section-title">Настройки</div>
-    <div class="nav-item" data-page="channels"><span class="nav-icon">⚙️</span> Каналы</div>
+    <div class="nav-item" data-page="channels" title="Настройка источников"><span class="nav-icon">⚙️</span> Каналы</div>
+  </div>
+
+  <div class="nav-section nav-debug collapsed" id="navDebug">
+    <div class="nav-section-title nav-debug-toggle" id="navDebugToggle" title="Сырые срезы данных">
+      <span class="nav-debug-chevron">▸</span> Raw / Debug
+    </div>
+    <div class="nav-debug-items">
+      <div class="nav-item" data-page="outliers" title="Сырой список аутлайеров"><span class="nav-icon">🔥</span> Аутлайеры</div>
+      <div class="nav-item" data-page="recent" title="Недавно опубликованные видео"><span class="nav-icon">📅</span> Свежие</div>
+      <div class="nav-item" data-page="velocity" title="Скорость набора просмотров"><span class="nav-icon">📈</span> Динамика</div>
+      <div class="nav-item" data-page="eqs" title="Лидеры по качеству вовлечения (EQS)"><span class="nav-icon">🎯</span> Лидеры EQS</div>
+      <div class="nav-item" data-page="topics" title="Тематические кластеры"><span class="nav-icon">📊</span> Темы</div>
+    </div>
   </div>
 </aside>
 
@@ -961,7 +971,7 @@
   <div class="topbar">
     <div class="topbar-left">
       <button class="hamburger" id="hamburger">☰</button>
-      <h2 id="pageTitle">Аутлайеры</h2>
+      <h2 id="pageTitle">Дневной радар</h2>
     </div>
     <div class="filters" id="filters">
       <div class="filter-group">
@@ -1019,11 +1029,11 @@
     <div id="reportContent"><div class="loading">Готовим данные отчёта...</div></div>
   </section>
 
-  <section class="page" id="page-radar">
+  <section class="page active" id="page-radar">
     <div id="radarContent"><div class="loading">Строим радар...</div></div>
   </section>
 
-  <section class="page active" id="page-videos">
+  <section class="page" id="page-videos">
     <div id="signalsPanel"></div>
     <div class="stats" id="stats">Загрузка...</div>
     <div class="grid" id="grid"></div>
@@ -1092,7 +1102,9 @@ durTabs.forEach(t => {
   t.classList.toggle("active", t.dataset.dur === activeDur);
 });
 let cachedData = [];
-let currentPage = "outliers";
+let currentPage = "radar";
+// Raw/Debug pages — hidden in the collapsible sidebar section, not part of the main workflow.
+const DEBUG_PAGES = new Set(["outliers", "recent", "velocity", "eqs", "topics"]);
 const renderedVideos = new Map();
 
 const PAGES = {
@@ -3920,6 +3932,9 @@ function switchPage(pageId) {
   pageTitle.textContent = cfg.title;
   filtersEl.style.display = cfg.showFilters ? "" : "none";
   $("pageQuestions").innerHTML = questionsHTML(pageId);
+  // remember the page so a refresh reopens it; keep the Raw/Debug section open while on a debug page
+  try { localStorage.setItem("tm_page", pageId); } catch { /* ignore */ }
+  if (DEBUG_PAGES.has(pageId)) $("navDebug")?.classList.remove("collapsed");
 
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
 
@@ -3961,6 +3976,12 @@ function switchPage(pageId) {
 /* ---------- event wiring ---------- */
 navItems.forEach(item => {
   item.addEventListener("click", () => switchPage(item.dataset.page));
+});
+
+// Raw/Debug section collapse toggle (persisted; closed by default)
+$("navDebugToggle")?.addEventListener("click", () => {
+  const collapsed = $("navDebug").classList.toggle("collapsed");
+  try { localStorage.setItem("tm_nav_debug_collapsed", collapsed ? "1" : "0"); } catch { /* ignore */ }
 });
 
 dayTabs.forEach(tab => {
@@ -4021,9 +4042,12 @@ document.addEventListener("click", async e => {
 // Hamburger
 $("hamburger").addEventListener("click", () => sidebar.classList.toggle("open"));
 
-// Initial load — wait for reportMap so bookmark states render correctly on first paint
-$("pageQuestions").innerHTML = questionsHTML(currentPage);
-loadReportMap().then(loadVideos);
+// Initial load — wait for reportMap so bookmark states render correctly on first paint.
+// Restore the last page (so a refresh on any tab, incl. Raw/Debug, reopens it); default = radar.
+if (localStorage.getItem("tm_nav_debug_collapsed") === "0") $("navDebug")?.classList.remove("collapsed");
+let startPage = "radar";
+try { const s = localStorage.getItem("tm_page"); if (s && PAGES[s]) startPage = s; } catch { /* ignore */ }
+loadReportMap().then(() => switchPage(startPage));
 </script>
 </body>
 </html>
