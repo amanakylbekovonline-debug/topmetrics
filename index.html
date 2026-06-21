@@ -2862,9 +2862,12 @@ async function loadRadar() {
     });
   });
 
-  // save as report → jump to Archive with the compose form prefilled as a Daily report
+  // save as report → jump to Archive with the compose form prefilled as a Daily report,
+  // carrying the Sonnet analysis (brief + expanded notes if generated) into the body so it
+  // doesn't have to be copy-pasted by hand.
   $("radarSaveReportBtn").addEventListener("click", () => {
     pendingComposeType = "daily";
+    pendingComposeBody = [analyst.brief, analyst.expanded].filter(Boolean).map(s => s.trim()).join("\n\n");
     switchPage("archive");
   });
 
@@ -3047,6 +3050,7 @@ async function loadInsights() {
 let archiveCompiled = [];   // cached report rows
 let composeOpen = false;
 let pendingComposeType = null; // set by "Save as report" on other pages → opens compose prefilled
+let pendingComposeBody = "";   // optional prefilled body (e.g. the Sonnet analysis from Daily Radar)
 
 function reportDateLabel(d) {
   return new Date(d + "T00:00:00Z")
@@ -3184,8 +3188,10 @@ function wireArchive() {
     $("archiveCompose").classList.remove("hidden");
     $("acType").value = pendingComposeType;
     $("acDate").value = new Date().toLocaleDateString("en-CA");
+    if (pendingComposeBody) $("acBody").value = pendingComposeBody;
     $("acBody").focus();
     pendingComposeType = null;
+    pendingComposeBody = "";
   }
 }
 
