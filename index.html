@@ -1338,16 +1338,42 @@ function isSaved(id) { return isInLibrary(id); }
 /* ---------- AI Save Queue (Daily Radar → confirm → Library) ---------- */
 // The analyst returns a machine block after a "===SAVE_QUEUE===" marker. We split it off the
 // displayed brief, parse it, and let the user confirm before anything is written to the Library.
+// Scan a string and JSON.parse each balanced top-level {...} object (string-aware), skipping
+// any trailing incomplete one. Lets us salvage a save_queue even if the model's JSON was
+// truncated mid-array (e.g. hit max_tokens) — we keep every complete item.
+function salvageObjects(s) {
+  const out = [];
+  for (let i = 0; i < s.length; ) {
+    if (s[i] !== "{") { i++; continue; }
+    let depth = 0, inStr = false, esc = false, start = i;
+    for (; i < s.length; i++) {
+      const c = s[i];
+      if (inStr) { if (esc) esc = false; else if (c === "\\") esc = true; else if (c === '"') inStr = false; }
+      else if (c === '"') inStr = true;
+      else if (c === "{") depth++;
+      else if (c === "}") { if (--depth === 0) { i++; break; } }
+    }
+    if (depth !== 0) break; // unterminated trailing object → stop
+    try { out.push(JSON.parse(s.slice(start, i))); } catch { /* skip bad object */ }
+  }
+  return out;
+}
 function parseSaveQueue(text) {
   const parts = String(text || "").split(/^===SAVE_QUEUE===\s*$/m);
   const body = parts[0] || "";
   let queue = [];
   if (parts.length > 1) {
-    // tolerate stray code fences / prose: strip fences, then take the first {...last }
+    // tolerate stray code fences / prose: strip fences, then take from the first {
     let raw = parts.slice(1).join("\n").replace(/```[a-z]*/gi, "").replace(/```/g, "").trim();
-    const a = raw.indexOf("{"), b = raw.lastIndexOf("}");
-    if (a !== -1 && b > a) raw = raw.slice(a, b + 1);
-    try { queue = JSON.parse(raw).save_queue || []; } catch { queue = []; }
+    const a = raw.indexOf("{");
+    if (a !== -1) raw = raw.slice(a);
+    try {
+      queue = JSON.parse(raw).save_queue || [];
+    } catch {
+      // truncated/invalid JSON — salvage every complete item from inside the array
+      const arr = raw.indexOf("[");
+      queue = arr !== -1 ? salvageObjects(raw.slice(arr)) : [];
+    }
   }
   return { brief: body.trim(), queue: Array.isArray(queue) ? queue : [] };
 }
