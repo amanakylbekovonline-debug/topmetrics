@@ -696,6 +696,9 @@
   .sq-info .sq-info-k { color: #777; flex-shrink: 0; }
   .sq-based { font-size: 11px; color: #777; margin-top: 3px; }
   .sq-onechan { font-size: 11px; padding: 1px 7px; border-radius: 5px; background: rgba(239,68,68,.12); color: #fca5a5; }
+  .sq-cached { font-size: 11px; padding: 1px 7px; border-radius: 5px; background: #1a1a1a; color: #888; font-weight: 400; }
+  .sq-refresh { background: none; border: 1px solid #333; color: #aaa; font-size: 12px; padding: 4px 10px; border-radius: 7px; cursor: pointer; }
+  .sq-refresh:hover { border-color: #555; color: #e5e5e5; }
 
   /* Daily Radar page */
   .radar-section-title {
@@ -1236,6 +1239,21 @@ function toast(msg) {
   toastTimer = setTimeout(() => el.classList.remove("show"), 2600);
 }
 
+// Small localStorage cache with TTL — keeps on-demand Sonnet output (curate / weekly разбор)
+// around for ~a day so it doesn't vanish on navigation/reload (like the radar brief cache).
+const DAY_MS = 24 * 60 * 60 * 1000;
+function cacheGet(key, maxAgeMs = DAY_MS) {
+  try {
+    const o = JSON.parse(localStorage.getItem(key) || "null");
+    if (!o || (Date.now() - (o.t || 0)) > maxAgeMs) return null;
+    return o.v;
+  } catch { return null; }
+}
+function cacheSet(key, v) {
+  try { localStorage.setItem(key, JSON.stringify({ t: Date.now(), v })); } catch { /* quota/blocked — ignore */ }
+}
+function cacheDel(key) { try { localStorage.removeItem(key); } catch { /* ignore */ } }
+
 /* ---------- Topic xViews ---------- */
 // xViews = how a video performed RELATIVE TO ITS THEME, after removing channel size.
 // The topic norm uses median outlier_score (channel-size-neutral, like xG removes
@@ -1490,8 +1508,15 @@ function parseCurate(text) {
   } catch { return { ready: [], need: [], dont: [] }; }
 }
 
-async function runLibraryCurate() {
+const CURATE_CACHE_KEY = "tm_curate_cache";
+async function runLibraryCurate(force = false) {
   const btn = $("libCurateBtn");
+  // reuse the cached отбор (within ~a day) unless explicitly refreshing — saves tokens and keeps
+  // the result around instead of re-running Sonnet on every click.
+  if (!force) {
+    const cached = cacheGet(CURATE_CACHE_KEY);
+    if (cached) { openCurateQueue(cached, { cached: true }); return; }
+  }
   const cards = [...libRowMap.values()]
     .filter(r => r.videos && !recSourceSet.has(r.video_id))
     .map(r => ({
@@ -1507,12 +1532,13 @@ async function runLibraryCurate() {
     if (error || data?.error) { toast("Ошибка: " + (error?.message || data.error)); return; }
     const result = parseCurate(data.analysis);
     if (!result.ready.length && !result.need.length && !result.dont.length) { toast("Sonnet не вернул предложений."); return; }
+    cacheSet(CURATE_CACHE_KEY, result);
     openCurateQueue(result);
   } catch (e) { toast("Ошибка: " + e.message); }
   finally { btn.disabled = false; btn.textContent = orig; }
 }
 
-function openCurateQueue(result) {
+function openCurateQueue(result, opts = {}) {
   closeSaveQueue();
   // validate ready items: based_on / source must be real library cards; caution source is never ready
   const ready = (result.ready || []).map(it => {
@@ -1554,7 +1580,8 @@ function openCurateQueue(result) {
   overlay.innerHTML = `
     <div class="sq-modal">
       <div class="sq-head">
-        <div class="sq-title">Sonnet отобрал из библиотеки</div>
+        <div class="sq-title">Sonnet отобрал из библиотеки${opts.cached ? ` <span class="sq-cached">сохранённый отбор</span>` : ""}</div>
+        <button class="sq-refresh" id="sqRefresh" title="Пересобрать заново (новый вызов Sonnet)">↻ Пересобрать</button>
         <button class="sq-close" id="sqClose">×</button>
       </div>
       <div class="sq-sub">Отмеченное уйдёт в Рекомендации как открытые ставки. Карточки «только один канал» сняты по умолчанию (подтверждение одним автором) — отметь сам, если это осознанная format-ставка.</div>
@@ -1577,6 +1604,7 @@ function openCurateQueue(result) {
   overlay.addEventListener("click", e => { if (e.target === overlay) closeSaveQueue(); });
   $("sqClose").addEventListener("click", closeSaveQueue);
   $("sqCancel").addEventListener("click", closeSaveQueue);
+  $("sqRefresh")?.addEventListener("click", () => { cacheDel(CURATE_CACHE_KEY); closeSaveQueue(); runLibraryCurate(true); });
 
   $("sqSave")?.addEventListener("click", async () => {
     const btn = $("sqSave"); btn.disabled = true;
@@ -1602,6 +1630,7 @@ function openCurateQueue(result) {
       recSourceSet.add(it.src);
       saved++;
     }
+    if (saved) cacheDel(CURATE_CACHE_KEY); // saved cards are now recommended → отбор устарел
     closeSaveQueue();
     toast(`Создано рекомендаций: ${saved}`);
     if (currentPage === "saved") loadReportLibrary();
@@ -2844,17 +2873,28 @@ async function loadWeeklyReport() {
   });
   let weeklyAIDone = false;
   let weeklyAIText = ""; // the Sonnet weekly разбор, kept so "Save as report" can prefill it
+  const WEEKLY_AI_KEY = "tm_weekly_ai";
+  const showWeeklyAI = text => {
+    weeklyAIText = text || "";
+    $("weeklyAI").innerHTML = `<div class="analyst-body" style="padding:8px 4px 4px">${marked.parse(weeklyAIText)}</div>`;
+    weeklyAIDone = true; $("weeklyAIBtn").textContent = "✨ Скрыть Sonnet";
+  };
   $("weeklyAIBtn").addEventListener("click", async () => {
     const box = $("weeklyAI"), btn = $("weeklyAIBtn");
-    if (weeklyAIDone) { box.innerHTML = ""; weeklyAIDone = false; weeklyAIText = ""; btn.textContent = "✨ Sonnet-разбор"; return; }
+    if (weeklyAIDone) { box.innerHTML = ""; weeklyAIDone = false; btn.textContent = "✨ Sonnet-разбор"; return; } // hide (cache kept)
+    if (weeklyAIText) { showWeeklyAI(weeklyAIText); return; }                  // already loaded → re-show, no call
+    const cached = cacheGet(WEEKLY_AI_KEY);
+    if (cached && cached.weekLabel === weekLabel && cached.text) { showWeeklyAI(cached.text); return; } // from cache, no call
     btn.disabled = true; box.innerHTML = `<div class="loading" style="padding:16px">Sonnet разбирает неделю…</div>`;
     try {
       const { data, error } = await supabase.functions.invoke("radar-analyst", { body: weeklyAIPayload() });
       if (error || data?.error) box.innerHTML = `<div class="empty" style="padding:14px">Ошибка: ${escapeHtml(error?.message || data.error)}</div>`;
-      else { weeklyAIText = data.analysis || ""; box.innerHTML = `<div class="analyst-body" style="padding:8px 4px 4px">${marked.parse(weeklyAIText)}</div>`; weeklyAIDone = true; btn.textContent = "✨ Скрыть Sonnet"; }
+      else { cacheSet(WEEKLY_AI_KEY, { text: data.analysis || "", weekLabel }); showWeeklyAI(data.analysis || ""); }
     } catch (e) { box.innerHTML = `<div class="empty" style="padding:14px">Ошибка: ${escapeHtml(e.message)}</div>`; }
     btn.disabled = false;
   });
+  // auto-restore this week's cached разбор so it survives navigation/reload (like the radar brief)
+  (() => { const c = cacheGet(WEEKLY_AI_KEY); if (c && c.weekLabel === weekLabel && c.text) showWeeklyAI(c.text); })();
 
   // narrative card actions: toggle evidence / save narrative as an open recommendation
   content.querySelectorAll(".narr-ev-btn").forEach(b =>
