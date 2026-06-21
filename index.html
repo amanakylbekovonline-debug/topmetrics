@@ -681,6 +681,21 @@
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+  /* Library curate (Sonnet triage → recommendations) */
+  .lib-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 4px 0 2px; }
+  .lib-head .stats { margin: 0; }
+  .lib-head #libCurateBtn { margin-left: auto; }
+  .sq-group-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #888; margin: 14px 4px 6px; padding-top: 10px; border-top: 1px solid #1f1f1f; }
+  .sq-group-title:first-child { border-top: none; padding-top: 0; }
+  .sq-group-title.g-ready { color: #6ee7b7; }
+  .sq-group-title.g-need  { color: #fcd34d; }
+  .sq-group-title.g-dont  { color: #fca5a5; }
+  .sq-draft { font-size: 13px; color: #e5e5e5; margin-top: 2px; }
+  .sq-draft b { color: #c4b5fd; }
+  .sq-info { display: flex; gap: 10px; padding: 8px 10px; font-size: 12px; color: #aaa; line-height: 1.45; }
+  .sq-info .sq-info-k { color: #777; flex-shrink: 0; }
+  .sq-based { font-size: 11px; color: #777; margin-top: 3px; }
+
   /* Daily Radar page */
   .radar-section-title {
     font-size: 11px; font-weight: 600; color: #555;
@@ -1041,7 +1056,10 @@
 
   <section class="page" id="page-saved">
     <div class="lib-tabs" id="libTabs"></div>
-    <div class="stats" id="savedStats"></div>
+    <div class="lib-head">
+      <div class="stats" id="savedStats"></div>
+      <button class="copy-btn" id="libCurateBtn" style="display:none" title="Sonnet отберёт из библиотеки, что готово в Рекомендации">✨ Отобрать в рекомендации</button>
+    </div>
     <div id="savedGrid"></div>
   </section>
 
@@ -1454,6 +1472,137 @@ function openSaveQueue(queue) {
   });
 }
 
+/* ---------- Library curate: Sonnet triages saved cards → recommendations ---------- */
+// Sonnet returns a JSON object with 3 groups. Editor confirms which "ready" items become
+// recommendations. Same "AI proposes → human confirms" principle as the Save Queue.
+function parseCurate(text) {
+  let raw = String(text || "").replace(/```[a-z]*/gi, "").replace(/```/g, "").trim();
+  const a = raw.indexOf("{"), b = raw.lastIndexOf("}");
+  if (a !== -1 && b > a) raw = raw.slice(a, b + 1);
+  try {
+    const o = JSON.parse(raw);
+    return {
+      ready: Array.isArray(o.ready_for_recommendations) ? o.ready_for_recommendations : [],
+      need:  Array.isArray(o.need_more_evidence) ? o.need_more_evidence : [],
+      dont:  Array.isArray(o.do_not_send) ? o.do_not_send : [],
+    };
+  } catch { return { ready: [], need: [], dont: [] }; }
+}
+
+async function runLibraryCurate() {
+  const btn = $("libCurateBtn");
+  const cards = [...libRowMap.values()]
+    .filter(r => r.videos && !recSourceSet.has(r.video_id))
+    .map(r => ({
+      id: r.video_id, t: r.videos.title, ch: r.videos.channels?.title || "—",
+      subs: r.videos.channels?.subscriber_count || 0, role: r.role || "",
+      narrative: r.narrative || "", conf: r.confidence || "",
+      x: +(r.videos.outlier_score || 0).toFixed(1),
+    }));
+  if (!cards.length) { toast("Нет новых карточек — всё уже в рекомендациях."); return; }
+  const orig = btn.textContent; btn.disabled = true; btn.textContent = "Sonnet отбирает…";
+  try {
+    const { data, error } = await supabase.functions.invoke("radar-analyst", { body: { mode: "curate", cards } });
+    if (error || data?.error) { toast("Ошибка: " + (error?.message || data.error)); return; }
+    const result = parseCurate(data.analysis);
+    if (!result.ready.length && !result.need.length && !result.dont.length) { toast("Sonnet не вернул предложений."); return; }
+    openCurateQueue(result);
+  } catch (e) { toast("Ошибка: " + e.message); }
+  finally { btn.disabled = false; btn.textContent = orig; }
+}
+
+function openCurateQueue(result) {
+  closeSaveQueue();
+  // validate ready items: based_on / source must be real library cards; caution source is never ready
+  const ready = (result.ready || []).map(it => {
+    const based = (Array.isArray(it.based_on) ? it.based_on : []).filter(id => libRowMap.has(id));
+    const src = libRowMap.has(it.source_video_id) ? it.source_video_id : based[0];
+    return { ...it, based, src };
+  }).filter(it => it.src && libRowMap.get(it.src)?.role !== "caution");
+  const need = result.need || [];
+  const dont = result.dont || [];
+
+  const labelOf = id => { const r = libRowMap.get(id); return r ? `${r.videos?.channels?.title || "—"} — ${r.videos?.title || id}` : id; };
+
+  const readyRows = ready.map((it, i) => `
+    <label class="sq-row">
+      <input type="checkbox" class="sq-check" data-idx="${i}" checked/>
+      <div class="sq-row-main">
+        <div class="sq-row-top"><b>${escapeHtml(it.idea || "(без названия)")}</b> <span class="sq-conf conf-${normConf(it.confidence)}">${SQ_CONF_RU[normConf(it.confidence)]}</span></div>
+        ${it.draft_title ? `<div class="sq-draft">Заголовок: <b>${escapeHtml(it.draft_title)}</b></div>` : ""}
+        ${it.risk ? `<div class="sq-row-why">Риск: ${escapeHtml(it.risk)}</div>` : ""}
+        <div class="sq-based">На основе: ${escapeHtml(it.based.map(labelOf).join(" · ") || labelOf(it.src))}</div>
+      </div>
+    </label>`).join("");
+
+  const needRows = need.map(n => `
+    <div class="sq-info"><span class="sq-info-k">тема</span><div><b>${escapeHtml(n.theme || "—")}</b> — ${escapeHtml(n.reason || "")}${n.next_step ? `<br>▸ ${escapeHtml(n.next_step)}` : ""}</div></div>`).join("");
+
+  const dontRows = dont.map(d => {
+    const title = libRowMap.get(d.video_id)?.videos?.title || d.video || d.video_id || "—";
+    return `<div class="sq-info"><span class="sq-info-k">✕</span><div><b>${escapeHtml(title)}</b> — ${escapeHtml(d.reason || "")}</div></div>`;
+  }).join("");
+
+  const overlay = document.createElement("div");
+  overlay.className = "sq-overlay";
+  overlay.id = "sqOverlay";
+  overlay.innerHTML = `
+    <div class="sq-modal">
+      <div class="sq-head">
+        <div class="sq-title">Sonnet отобрал из библиотеки</div>
+        <button class="sq-close" id="sqClose">×</button>
+      </div>
+      <div class="sq-sub">Отмеченное уйдёт в Рекомендации как открытые ставки. Остальные группы — подсказки.</div>
+      <div class="sq-list">
+        ${ready.length ? `<div class="sq-group-title g-ready">Готово в рекомендации (${ready.length})</div>${readyRows}` : ""}
+        ${need.length ? `<div class="sq-group-title g-need">Добрать evidence (${need.length})</div>${needRows}` : ""}
+        ${dont.length ? `<div class="sq-group-title g-dont">Не отправлять (${dont.length})</div>${dontRows}` : ""}
+        ${!ready.length && !need.length && !dont.length ? `<div class="empty" style="padding:14px">Sonnet ничего не предложил.</div>` : ""}
+      </div>
+      <div class="sq-foot">
+        <button class="sq-cancel" id="sqCancel">Закрыть</button>
+        ${ready.length ? `<button class="sq-save" id="sqSave">Сохранить отмеченные (<span id="sqCount">0</span>)</button>` : ""}
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  const updateCount = () => { const c = $("sqCount"); if (c) c.textContent = String(overlay.querySelectorAll(".sq-check:checked").length); };
+  updateCount();
+  overlay.querySelectorAll(".sq-check").forEach(c => c.addEventListener("change", updateCount));
+  overlay.addEventListener("click", e => { if (e.target === overlay) closeSaveQueue(); });
+  $("sqClose").addEventListener("click", closeSaveQueue);
+  $("sqCancel").addEventListener("click", closeSaveQueue);
+
+  $("sqSave")?.addEventListener("click", async () => {
+    const btn = $("sqSave"); btn.disabled = true;
+    let saved = 0;
+    for (const ch of overlay.querySelectorAll(".sq-check:checked")) {
+      const it = ready[+ch.dataset.idx];
+      if (!it) continue;
+      const srcRow = libRowMap.get(it.src);
+      const theme = srcRow?.narrative || "";
+      const notes = [
+        it.draft_title ? `Черновик заголовка: ${it.draft_title}` : "",
+        it.why_ready ? `Почему готово: ${it.why_ready}` : "",
+        it.risk ? `Риск: ${it.risk}` : "",
+        it.confidence ? `Доверие: ${it.confidence}` : "",
+        it.based.length ? `На основе: ${it.based.map(labelOf).join("; ")}` : "",
+      ].filter(Boolean).join("\n");
+      const { error } = await supabase.from("recommendations").insert({
+        idea: it.idea || it.draft_title || "(без названия)",
+        theme, notes, source_video_id: it.src, status: "open",
+      });
+      if (error) { toast("Ошибка сохранения: " + error.message); btn.disabled = false; return; }
+      it.based.forEach(id => recSourceSet.add(id));
+      recSourceSet.add(it.src);
+      saved++;
+    }
+    closeSaveQueue();
+    toast(`Создано рекомендаций: ${saved}`);
+    if (currentPage === "saved") loadReportLibrary();
+  });
+}
+
 /* ---------- card render ---------- */
 function bookmarkSvg() {
   return `<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`;
@@ -1780,6 +1929,7 @@ async function loadReportLibrary() {
   const libTabs = $("libTabs");
   savedGrid.innerHTML = '<div class="loading">Загрузка библиотеки…</div>';
   savedStats.textContent = "";
+  $("libCurateBtn").style.display = "none";
   if (libTabs) libTabs.innerHTML = "";
 
   const { data: rows, error } = await supabase
@@ -1836,6 +1986,7 @@ async function loadReportLibrary() {
     });
   }
 
+  $("libCurateBtn").style.display = totalCount ? "" : "none";
   renderLibraryContent(groups, totalCount);
 }
 
@@ -2590,7 +2741,7 @@ async function loadWeeklyReport() {
   const briefHTML = `
     <div class="wb-panel">
       <div class="wb-head">📝 Weekly Brief
-        <button class="copy-btn analyst-trigger" id="weeklyAIBtn" style="margin-left:auto">🧠 Sonnet-разбор</button>
+        <button class="copy-btn analyst-trigger" id="weeklyAIBtn" style="margin-left:auto">✨ Sonnet-разбор</button>
       </div>
       <div class="wb-body">
         <div class="wb-row"><span class="wb-tag wb-main">Главный</span> ${primary
@@ -2690,12 +2841,12 @@ async function loadWeeklyReport() {
   let weeklyAIText = ""; // the Sonnet weekly разбор, kept so "Save as report" can prefill it
   $("weeklyAIBtn").addEventListener("click", async () => {
     const box = $("weeklyAI"), btn = $("weeklyAIBtn");
-    if (weeklyAIDone) { box.innerHTML = ""; weeklyAIDone = false; weeklyAIText = ""; btn.textContent = "🧠 Sonnet-разбор"; return; }
+    if (weeklyAIDone) { box.innerHTML = ""; weeklyAIDone = false; weeklyAIText = ""; btn.textContent = "✨ Sonnet-разбор"; return; }
     btn.disabled = true; box.innerHTML = `<div class="loading" style="padding:16px">Sonnet разбирает неделю…</div>`;
     try {
       const { data, error } = await supabase.functions.invoke("radar-analyst", { body: weeklyAIPayload() });
       if (error || data?.error) box.innerHTML = `<div class="empty" style="padding:14px">Ошибка: ${escapeHtml(error?.message || data.error)}</div>`;
-      else { weeklyAIText = data.analysis || ""; box.innerHTML = `<div class="analyst-body" style="padding:8px 4px 4px">${marked.parse(weeklyAIText)}</div>`; weeklyAIDone = true; btn.textContent = "🧠 Скрыть Sonnet"; }
+      else { weeklyAIText = data.analysis || ""; box.innerHTML = `<div class="analyst-body" style="padding:8px 4px 4px">${marked.parse(weeklyAIText)}</div>`; weeklyAIDone = true; btn.textContent = "✨ Скрыть Sonnet"; }
     } catch (e) { box.innerHTML = `<div class="empty" style="padding:14px">Ошибка: ${escapeHtml(e.message)}</div>`; }
     btn.disabled = false;
   });
@@ -2970,7 +3121,7 @@ async function loadRadar() {
         <button class="date-tab ${radarWindow===24?"active":""}" data-rwin="24">24ч</button>
         <button class="date-tab ${radarWindow===48?"active":""}" data-rwin="48">48ч</button>
       </div>
-      <button class="copy-btn analyst-trigger" id="radarAnalystBtn">🧠 Анализ</button>
+      <button class="copy-btn analyst-trigger" id="radarAnalystBtn">✨ Анализ</button>
       <button class="copy-btn" id="copyRadarBtn">📋 Скопировать промпт</button>
       <button class="ac-cancel" id="radarSaveReportBtn" style="margin-left:0" title="Открыть форму Архива, предзаполненную как Дневной отчёт, чтобы вставить готовый бриф">🗂️ Сохранить как отчёт</button>
     </div>
@@ -3009,7 +3160,7 @@ async function loadRadar() {
     fresh:          serAnalyst(freshVideos || [], v => velMap.get(v.video_id) ?? null),
   });
 
-  // Two modes: "🧠 Анализ" → short daily brief (cached, cheap). Expanded notes are a
+  // Two modes: "✨ Анализ" → short daily brief (cached, cheap). Expanded notes are a
   // separate on-demand Sonnet call (saves tokens when you only need the brief).
   let analyst = {}; // { brief, expanded, date, model }
 
@@ -3018,12 +3169,12 @@ async function loadRadar() {
     if (!el) return;
     const a = analyst;
     const picksBtn = a.saveQueue?.length ? `<button class="sq-trigger" id="saveAiPicksBtn">＋ Save AI picks (${a.saveQueue.length})</button>` : "";
-    const head = `<div class="analyst-head">🧠 ИИ-аналитик${a.date ? ` <span class="analyst-meta">${a.date}${a.model ? ` · ${a.model}` : ""}</span>` : ""}${picksBtn}${a.brief ? `<button class="analyst-refresh" id="analystRefresh">↻ Обновить</button>` : ""}</div>`;
+    const head = `<div class="analyst-head">✨ ИИ-аналитик${a.date ? ` <span class="analyst-meta">${a.date}${a.model ? ` · ${a.model}` : ""}</span>` : ""}${picksBtn}${a.brief ? `<button class="analyst-refresh" id="analystRefresh">↻ Обновить</button>` : ""}</div>`;
 
     if (flags.loading) { el.innerHTML = head + `<div class="loading" style="padding:20px">Sonnet готовит брифинг…</div>`; return; }
     if (!a.brief) {
       const err = flags.error ? `<div class="empty" style="padding:12px 16px 0">Ошибка: ${escapeHtml(flags.error)}</div>` : "";
-      el.innerHTML = head + err + `<div class="analyst-cta"><button class="copy-btn" id="analystRun">${flags.error ? "↻ Попробовать снова" : "🧠 Получить брифинг радара"}</button><span class="analyst-meta">короткий ежедневный разбор от Sonnet · развёрнутые заметки — отдельно по кнопке</span></div>`;
+      el.innerHTML = head + err + `<div class="analyst-cta"><button class="copy-btn" id="analystRun">${flags.error ? "↻ Попробовать снова" : "✨ Получить брифинг радара"}</button><span class="analyst-meta">короткий ежедневный разбор от Sonnet · развёрнутые заметки — отдельно по кнопке</span></div>`;
       $("analystRun")?.addEventListener("click", runBrief);
       return;
     }
@@ -4003,6 +4154,9 @@ $("navDebugToggle")?.addEventListener("click", () => {
   const collapsed = $("navDebug").classList.toggle("collapsed");
   try { localStorage.setItem("tm_nav_debug_collapsed", collapsed ? "1" : "0"); } catch { /* ignore */ }
 });
+
+// Library → "Отобрать в рекомендации" (Sonnet triage)
+$("libCurateBtn")?.addEventListener("click", runLibraryCurate);
 
 dayTabs.forEach(tab => {
   tab.addEventListener("click", () => {
