@@ -2571,6 +2571,22 @@ async function loadWeeklyReport() {
     if (g.cur.topShare > 0.35) why.push(`топ-канал даёт ${Math.round(g.cur.topShare * 100)}% outlier'ов`);
     return `есть ${g.cur.ch} ${chWord(g.cur.ch)}, но ${why.length ? why.join(", а " ) : "сигнал слабый"}`;
   };
+  // plain-text (markdown) version of the computed Weekly Brief — used to prefill "Save as report"
+  // when the Sonnet разбор hasn't been generated, so the report body is never empty.
+  const bText = g => g
+    ? `${labelRuOf(g.label)} — ${SAT_RU[g.sat.key] || g.sat.txt}, ${g.cur.n}/${g.cur.total} (lift ${g.cur.avgO.toFixed(1)}x · ${g.cur.ch} кан. · доверие ${CONF_RU[g.conf.key] || g.conf.txt})`
+    : "—";
+  const computedBriefText = () => {
+    const L = [`# Weekly Brief — ${weekLabel}`, ""];
+    L.push(`**Главный:** ${primary ? bText(primary) : "Чистого фаворита на неделе нет — ни одна тема не прошла проверку"}`);
+    if (secondary) L.push(`**Вторичный:** ${bText(secondary)}`);
+    if (crowded)   L.push(`**Осторожно / забито:** ${bText(crowded)} — тема перегрета, высокая конкуренция, не возможность`);
+    if (weak)      L.push(`**Слабый:** ${bText(weak)} — ${weakWhy(weak)}`);
+    L.push("", `**Что делать:** ${primary
+      ? `собирать «${labelRuOf(primary.label)}» evidence + формулы заголовков.`
+      : "чёткого фаворита нет — добирать самую устойчивую из доступных и ждать, пока тему подхватят новые каналы."}`);
+    return L.join("\n");
+  };
   const briefHTML = `
     <div class="wb-panel">
       <div class="wb-head">📝 Weekly Brief
@@ -2671,14 +2687,15 @@ async function loadWeeklyReport() {
     })),
   });
   let weeklyAIDone = false;
+  let weeklyAIText = ""; // the Sonnet weekly разбор, kept so "Save as report" can prefill it
   $("weeklyAIBtn").addEventListener("click", async () => {
     const box = $("weeklyAI"), btn = $("weeklyAIBtn");
-    if (weeklyAIDone) { box.innerHTML = ""; weeklyAIDone = false; btn.textContent = "🧠 Sonnet-разбор"; return; }
+    if (weeklyAIDone) { box.innerHTML = ""; weeklyAIDone = false; weeklyAIText = ""; btn.textContent = "🧠 Sonnet-разбор"; return; }
     btn.disabled = true; box.innerHTML = `<div class="loading" style="padding:16px">Sonnet разбирает неделю…</div>`;
     try {
       const { data, error } = await supabase.functions.invoke("radar-analyst", { body: weeklyAIPayload() });
       if (error || data?.error) box.innerHTML = `<div class="empty" style="padding:14px">Ошибка: ${escapeHtml(error?.message || data.error)}</div>`;
-      else { box.innerHTML = `<div class="analyst-body" style="padding:8px 4px 4px">${marked.parse(data.analysis || "")}</div>`; weeklyAIDone = true; btn.textContent = "🧠 Скрыть Sonnet"; }
+      else { weeklyAIText = data.analysis || ""; box.innerHTML = `<div class="analyst-body" style="padding:8px 4px 4px">${marked.parse(weeklyAIText)}</div>`; weeklyAIDone = true; btn.textContent = "🧠 Скрыть Sonnet"; }
     } catch (e) { box.innerHTML = `<div class="empty" style="padding:14px">Ошибка: ${escapeHtml(e.message)}</div>`; }
     btn.disabled = false;
   });
@@ -2710,9 +2727,12 @@ async function loadWeeklyReport() {
     });
   });
 
-  // save as report → Archive compose prefilled as a Weekly report
+  // save as report → Archive compose prefilled as a Weekly report. Prefer the Sonnet weekly
+  // разбор if it was generated; otherwise fall back to the always-available computed Weekly Brief
+  // (text), so the report body is never empty and nothing has to be copy-pasted by hand.
   $("reportSaveBtn").addEventListener("click", () => {
     pendingComposeType = "weekly";
+    pendingComposeBody = weeklyAIText.trim() || computedBriefText();
     switchPage("archive");
   });
 }
