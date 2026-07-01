@@ -3189,12 +3189,17 @@ async function loadRadar() {
     }));
 
   // --- AI analyst (Sonnet via radar-analyst edge fn) ---
+  // extreme x (>= this) is usually external (collab / viral / guest traffic), not a repeatable
+  // creator opportunity — flag it in code so the analyst must verify the cause, not slot it as
+  // a clean opportunity/proof. Numeric gate in code (hybrid: code marks, model judges).
+  const EXTREME_X = 10;
   const serAnalyst = (arr, delta) => (arr || []).slice(0, 25).map(v => ({
     id: v.video_id, // sent so the analyst can echo the exact video_id back in save_queue
     t: v.title,
     ch: v.channels?.title || "—",
     subs: v.channels?.subscriber_count || 0,
     x: +(v.outlier_score || 0).toFixed(1),
+    anomaly: (v.outlier_score || 0) >= EXTREME_X, // extreme x → verify cause before calling it an opportunity
     plus: delta ? delta(v) : null,
     vph: Math.round(v.vph || 0),
   }));
